@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f9fafb;
+  --foreground: #111827;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-noto-sans-kr), "Apple SD Gothic Neo", sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* iOS 입력창 줌 방지 */
+input,
+select,
+textarea {
+  font-size: 18px;
+}
+
+/* 스크롤바 숨김 (필터 가로 스크롤) */
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
