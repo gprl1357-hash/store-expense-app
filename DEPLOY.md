@@ -1,5 +1,42 @@
 # GitHub / Vercel 배포 빠른 가이드
 
+## ⚡ 완전 자동화 (한 번만 설정)
+
+**원리:** `git push` → GitHub 업로드 → Vercel이 자동 감지 → 배포  
+CLI로 매번 Vercel 명령을 칠 필요 없습니다.
+
+```
+코드 수정 → git push (또는 npm run release)
+                ↓
+         GitHub 저장소 업데이트
+                ↓
+    GitHub Actions (lint + build 검증)
+                ↓
+    Vercel 자동 Production 배포  ← 1~2분
+```
+
+### 1회 설정 체크리스트
+
+| # | 작업 | 상태 |
+|---|------|------|
+| ① | `brew install gh` 후 `gh auth login` (Google SSO) | ☐ |
+| ② | `git push -u origin main` 으로 GitHub 업로드 | ☐ |
+| ③ | [vercel.com/new](https://vercel.com/new) → GitHub 연동 → `store-expense-app` Import | ☐ |
+| ④ | Vercel Environment Variables 3개 등록 (아래 참고) | ☐ |
+| ⑤ | Deploy 완료 확인 | ☐ |
+
+**③이 핵심입니다.** Vercel과 GitHub를 연결하면, 이후 `main` 브랜치 push마다 **자동 배포**됩니다.
+
+### 이후 매일 사용 (한 줄)
+
+```bash
+npm run release -- "지출 폼 버튼 크기 수정"
+# 또는
+git add . && git commit -m "메시지" && git push origin main
+```
+
+---
+
 ## 계정 정보
 
 | 항목 | 값 |
