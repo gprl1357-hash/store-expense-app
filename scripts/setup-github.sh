@@ -3,7 +3,7 @@
 # 사용법: ./scripts/setup-github.sh <GITHUB_USERNAME>
 set -euo pipefail
 
-USERNAME="${1:-}"
+USERNAME="${1:-gprl1357-hash}"
 REPO_NAME="store-expense-app"
 
 if [[ -z "$USERNAME" ]]; then

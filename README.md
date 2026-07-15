@@ -60,6 +60,7 @@ git push origin main
 
 ```bash
 git remote add origin https://github.com/<YOUR_USERNAME>/store-expense-app.git
+# 예: git remote add origin https://github.com/gprl1357-hash/store-expense-app.git
 git push -u origin main
 ```
 
