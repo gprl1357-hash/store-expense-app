@@ -57,7 +57,9 @@ GitHub에서 **Pull Request** → `main` 대상으로 생성.
 
 1. `main` merge → Vercel **Production** 자동 배포 (1~2분)
 2. https://store-expense-app.vercel.app smoke test
-3. [`CHANGELOG.md`](../CHANGELOG.md)에 `[Unreleased]` 항목 정리 후 버전 섹션 추가
+3. [`CHANGELOG.md`](../CHANGELOG.md)에 `[Unreleased]` 항목 정리 후 버전 섹션 추가  
+   - 형식: `## [1.x.x] - YYYY-MM-DD HH:MM:SS` (KST, 24시간)  
+   - 예: `## [1.3.0] - 2026-07-16 15:30:00`
 4. (선택) `git tag -a v1.x.x -m "설명" && git push origin v1.x.x`
 
 ---
