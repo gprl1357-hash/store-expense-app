@@ -136,7 +136,7 @@ git push -u origin main
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://mklmpbtozqteofgeksrc.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase anon public key>
-NEXT_PUBLIC_MONTHLY_BUDGET=3000000
+NEXT_PUBLIC_MONTHLY_BUDGET=10000000
 ```
 
 4. **Deploy** 클릭

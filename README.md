@@ -76,7 +76,7 @@ git push -u origin main
 |--------|-----|------|
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://mklmpbtozqteofgeksrc.supabase.co` | Production, Preview, Development |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon public key | Production, Preview, Development |
-| `NEXT_PUBLIC_MONTHLY_BUDGET` | `3000000` | Production, Preview, Development |
+| `NEXT_PUBLIC_MONTHLY_BUDGET` | `10000000` | Production, Preview, Development |
 
 > ⚠️ `.env.local` 은 Git에 포함되지 않습니다. Vercel에 반드시 별도 등록하세요.
 
