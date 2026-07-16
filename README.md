@@ -2,6 +2,8 @@
 
 60대 이상 어르신을 포함한 3명이 모바일에서 함께 사용하는 매장 지출 관리 PWA입니다.
 
+**어르신 사용 가이드:** [docs/사용가이드.md](docs/사용가이드.md) · 배포 URL: https://store-expense-app.vercel.app
+
 ## 기술 스택
 
 - **Frontend:** Next.js (App Router), Tailwind CSS, lucide-react

@@ -73,6 +73,14 @@ export function toDateString(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+/** 날짜 문자열에 일수 더하기 (음수 가능) */
+export function addDaysToDateString(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + days);
+  return toDateString(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+}
+
 /** 특정 연·월의 시작·끝 */
 export function monthRange(
   year: number,

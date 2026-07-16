@@ -6,6 +6,8 @@ import {
   AMOUNT_SHORTCUTS,
   CATEGORIES,
   USERS,
+  addDaysToDateString,
+  formatDate,
   todayString,
   type Category,
   type User,
@@ -27,8 +29,10 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [date, setDate] = useState(todayString);
 
-  const date = todayString();
+  const today = todayString();
+  const isToday = date === today;
 
   function handleAmountChange(raw: string) {
     const digits = raw.replace(/\D/g, "");
@@ -87,6 +91,10 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
       setError("작성자를 선택해 주세요.");
       return;
     }
+    if (!date) {
+      setError("날짜를 선택해 주세요.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -103,6 +111,7 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
       setCategory(null);
       resetAmount();
       setMemo("");
+      setDate(todayString());
       clearPhoto();
     } catch {
       setError("저장에 실패했습니다. 다시 시도해 주세요.");
@@ -113,14 +122,46 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* 날짜 (자동) */}
+      {/* 날짜 */}
       <div>
-        <label className="mb-2 block text-xl font-bold text-gray-800">
+        <label htmlFor="expense-date" className="mb-2 block text-xl font-bold text-gray-800">
           날짜
         </label>
-        <div className="flex min-h-16 items-center rounded-2xl bg-gray-50 px-5 text-xl font-semibold text-gray-700 ring-2 ring-gray-200">
-          오늘 · {date.replace(/-/g, ".")}
+        <input
+          id="expense-date"
+          type="date"
+          value={date}
+          max={today}
+          onChange={(e) => setDate(e.target.value)}
+          className="min-h-[4.5rem] w-full rounded-2xl border-0 bg-white px-5 text-xl font-bold text-gray-900 ring-2 ring-gray-200 focus:ring-blue-500"
+        />
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setDate(today)}
+            className={`min-h-14 rounded-2xl text-lg font-bold ring-2 ${
+              isToday
+                ? "bg-blue-600 text-white ring-blue-700"
+                : "bg-white text-gray-800 ring-gray-200"
+            }`}
+          >
+            오늘
+          </button>
+          <button
+            type="button"
+            onClick={() => setDate(addDaysToDateString(today, -1))}
+            className={`min-h-14 rounded-2xl text-lg font-bold ring-2 ${
+              date === addDaysToDateString(today, -1)
+                ? "bg-blue-600 text-white ring-blue-700"
+                : "bg-white text-gray-800 ring-gray-200"
+            }`}
+          >
+            어제
+          </button>
         </div>
+        <p className="mt-2 text-lg text-gray-600">
+          {isToday ? "오늘" : "선택한 날짜"} · {formatDate(date)}
+        </p>
       </div>
 
       {/* 작성자 선택 */}
