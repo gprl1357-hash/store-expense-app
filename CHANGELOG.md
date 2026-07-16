@@ -9,8 +9,8 @@
 
 ## [Unreleased]
 
-### Added
-- (다음 배포 예정 항목)
+### Fixed
+- Production 지출 등록 Slack 알림 — Server Action 대신 `/api/slack/notify-expense` + keepalive fetch (탭 전환 시 취소 방지)
 
 ### Changed
 - 필수 개발 문서에 Slack·백업(v1.3.0) 내용 반영
