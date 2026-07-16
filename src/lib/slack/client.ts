@@ -58,7 +58,7 @@ export async function postSlackMessage(
   channelId: string,
   text: string
 ): Promise<void> {
-  await slackJsonApi("chat.postMessage", { channel: channelId, text });
+  await slackFormApi("chat.postMessage", { channel: channelId, text });
 }
 
 /** Slack 채널에 JSON 파일 업로드 (복원용 백업) */

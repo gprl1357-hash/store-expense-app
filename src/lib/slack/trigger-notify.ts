@@ -1,9 +1,23 @@
-/** Production에서 탭 전환 시에도 Slack 알림이 전송되도록 keepalive fetch 사용 */
-export function triggerSlackExpenseNotify(expenseId: string): void {
-  fetch("/api/slack/notify-expense", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ expenseId }),
-    keepalive: true,
-  }).catch((err) => console.error("[slack] notify fetch 실패:", err));
+import type { Expense } from "../supabase/types";
+
+/** 지출 등록 Slack 알림 — 탭 전환 전 완료 대기 */
+export async function sendSlackExpenseNotify(expense: Expense): Promise<boolean> {
+  try {
+    const res = await fetch("/api/slack/notify-expense", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expense }),
+    });
+
+    if (!res.ok) {
+      console.error("[slack] notify HTTP", res.status, await res.text());
+      return false;
+    }
+
+    const data = (await res.json()) as { ok?: boolean };
+    return Boolean(data.ok);
+  } catch (err) {
+    console.error("[slack] notify fetch 실패:", err);
+    return false;
+  }
 }
