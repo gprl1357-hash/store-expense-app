@@ -12,7 +12,8 @@
     "backup:test": "bash scripts/test-daily-backup.sh",
     "backup:restore": "node scripts/restore-from-backup.mjs",
     "slack:test": "bash scripts/test-slack-notify.sh",
-    "vercel:env:slack": "bash scripts/sync-vercel-slack-env.sh"
+    "vercel:env:slack": "bash scripts/sync-vercel-slack-env.sh",
+    "slack:webhook:setup": "bash scripts/setup-supabase-slack-webhook.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.5",

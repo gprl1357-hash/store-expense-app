@@ -6,7 +6,7 @@ import {
 } from "@/lib/slack/notify-expense";
 import { isSlackEnabled } from "@/lib/slack/config";
 
-/** 지출 등록 Slack 알림 */
+/** 지출 등록 Slack 알림 (클라이언트 백업) */
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
@@ -16,6 +16,10 @@ export async function POST(request: NextRequest) {
 
     if (!isSlackEnabled()) {
       return NextResponse.json({ ok: true, skipped: true, reason: "slack_disabled" });
+    }
+
+    if (process.env.SLACK_CLIENT_NOTIFY === "false") {
+      return NextResponse.json({ ok: true, skipped: true, reason: "client_notify_disabled" });
     }
 
     const expense = parseExpensePayload(body.expense);
