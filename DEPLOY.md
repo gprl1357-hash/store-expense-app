@@ -27,6 +27,27 @@ CLI로 매번 Vercel 명령을 칠 필요 없습니다.
 
 **③이 핵심입니다.** Vercel과 GitHub를 연결하면, 이후 `main` 브랜치 push마다 **자동 배포**됩니다.
 
+### 1회 설정 — push 자동화 (필수)
+
+```bash
+cd /Users/hyekihong/store-expense-app
+./scripts/setup-git-auth.sh
+```
+
+| 방법 | 설명 |
+|------|------|
+| **1) SSH (권장)** | 키 생성 → GitHub에 공개키 1회 등록 → 이후 자동 |
+| **2) PAT** | 토큰 → macOS Keychain + `.env.local` 저장 → 이후 자동 |
+
+설정 후:
+
+```bash
+./scripts/git-push.sh              # push만
+npm run release -- "변경 설명"      # 커밋 + push → Vercel 자동 배포
+```
+
+---
+
 ### 이후 매일 사용 (한 줄)
 
 ```bash

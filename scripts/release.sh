@@ -17,7 +17,7 @@ git add -A
 git commit -m "$MSG"
 
 echo "→ GitHub push 중..."
-git push origin main
+"$(dirname "$0")/git-push.sh" main
 
 echo ""
 echo "✓ 완료! GitHub 업로드됨."
