@@ -12,21 +12,53 @@ function parseExpensePayload(raw: unknown): Expense | null {
   if (!raw || typeof raw !== "object") return null;
   const row = raw as Record<string, unknown>;
   if (typeof row.id !== "string" || !row.id) return null;
-  if (typeof row.date !== "string") return null;
-  if (typeof row.category !== "string") return null;
-  if (typeof row.amount !== "number" && typeof row.amount !== "string") return null;
-  if (typeof row.created_by !== "string") return null;
+
+  const date =
+    typeof row.date === "string"
+      ? row.date
+      : row.date != null
+        ? String(row.date)
+        : null;
+  if (!date) return null;
+
+  const category =
+    typeof row.category === "string" ? row.category : String(row.category ?? "");
+  if (!category) return null;
+
+  const createdBy =
+    typeof row.created_by === "string"
+      ? row.created_by
+      : String(row.created_by ?? "");
+  if (!createdBy) return null;
+
+  const amountRaw = row.amount;
+  if (
+    amountRaw !== null &&
+    amountRaw !== undefined &&
+    typeof amountRaw !== "number" &&
+    typeof amountRaw !== "string"
+  ) {
+    return null;
+  }
 
   return parseExpense({
     id: row.id,
-    date: row.date,
-    category: row.category,
-    amount: Number(row.amount),
-    memo: typeof row.memo === "string" ? row.memo : null,
-    created_by: row.created_by,
-    created_at: typeof row.created_at === "string" ? row.created_at : new Date().toISOString(),
+    date,
+    category,
+    amount: Number(amountRaw ?? 0),
+    memo: typeof row.memo === "string" ? row.memo : row.memo == null ? null : String(row.memo),
+    created_by: createdBy,
+    created_at:
+      typeof row.created_at === "string"
+        ? row.created_at
+        : new Date().toISOString(),
     deleted_at: row.deleted_at ? String(row.deleted_at) : null,
-    photo_url: typeof row.photo_url === "string" ? row.photo_url : null,
+    photo_url:
+      typeof row.photo_url === "string"
+        ? row.photo_url
+        : row.photo_url == null
+          ? null
+          : String(row.photo_url),
   });
 }
 
