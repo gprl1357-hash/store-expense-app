@@ -65,6 +65,9 @@ cd /Users/hyekihong/store-expense-app
 2. **repo** 권한 체크 → **Generate token**
 3. `ghp_...` 토큰 복사 → 스크립트에 붙여넣기
 
+> **workflow 오류가 났다면:** `.github/workflows/` 파일 push에는 **workflow** 권한이 추가로 필요합니다.  
+> 현재 CI 파일은 제거했으므로 **repo** 권한만으로 push 가능합니다. (빌드는 Vercel에서 실행)
+
 ### Homebrew 설치가 필요할 때
 
 `brew: command not found` → Homebrew 미설치 상태입니다.
