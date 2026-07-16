@@ -1,3 +1,12 @@
+# (선택) GitHub Actions CI — PAT에 `workflow` 권한 필요
+#
+# 사용법:
+# 1. PAT 발급 시 repo + workflow 권한 체크
+# 2. 이 파일을 .github/workflows/ci.yml 로 복사 후 push
+#
+# workflow 권한 없이 push하려면 이 파일을 저장소에 포함하지 마세요.
+# Vercel 배포 시 자동으로 build가 실행됩니다.
+
 name: CI
 
 on:
