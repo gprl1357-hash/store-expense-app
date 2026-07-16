@@ -272,15 +272,15 @@ jobs:
 
 ---
 
-## 14. 현재 운영 상태 (v1.3.0)
+## 14. 현재 운영 상태 (v1.3.1)
 
 | 항목 | 상태 |
 |------|------|
 | Production | https://store-expense-app.vercel.app |
-| Slack 지출 등록 알림 | ✅ 운영 중 |
+| Slack 지출 등록 알림 | ✅ Supabase Webhook + KST 24시간 시각 |
 | 일일 백업 (23:00 KST) | ✅ Vercel Cron |
 | CI (`build.yml`) | ✅ `npm run build` |
-| Git tag | `v1.3.0` |
+| Git tag | `v1.3.1` |
 
 ---
 
@@ -296,4 +296,4 @@ jobs:
 
 ---
 
-*갱신: 2026-07-16 · store-expense-app 운영 관리 체계 v1.3*
+*갱신: 2026-07-16 · store-expense-app 운영 관리 체계 v1.3.1*

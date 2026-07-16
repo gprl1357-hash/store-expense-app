@@ -1,6 +1,7 @@
 # Slack 운영 데이터 백업 구성 제안
 
-> **상태:** ✅ **v1.3.0에서 1·2단계 구현 완료** (2026-07-16)  
+> **상태:** ✅ **v1.3.0~1.3.1에서 1·2단계 구현 완료** (2026-07-16)  
+> **v1.3.1:** Supabase Webhook 기반 Production 알림 안정화  
 > **운영 가이드:** [SLACK_SETUP.md](SLACK_SETUP.md)  
 > **기능 정리:** [WORK_SUMMARY.md](WORK_SUMMARY.md)
 

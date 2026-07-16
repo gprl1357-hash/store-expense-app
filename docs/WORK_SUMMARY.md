@@ -3,8 +3,8 @@
 > **프로젝트:** `store-expense-app`  
 > **매장:** 제주은희네해장국광명GIDC  
 > **작성자:** 홍혜기, 홍성미, 손선애  
-> **현재 버전:** v1.3.0  
-> **최종 갱신:** 2026-07-16
+> **현재 버전:** v1.3.1  
+> **최종 갱신:** 2026-07-16 17:51 KST
 
 ---
 
@@ -17,7 +17,7 @@
 | 프레임워크 | Next.js 16 (App Router) |
 | 스타일 | Tailwind CSS 4 |
 | 백엔드 | Supabase (PostgreSQL + Realtime + Storage) |
-| 알림·백업 | Slack Bot + Vercel Cron |
+| 알림·백업 | Slack Bot + Supabase Webhook + Vercel Cron |
 | 배포 | GitHub `main` → Vercel Production 자동 배포 |
 | 운영 URL | https://store-expense-app.vercel.app |
 | 월 예산 | 1,000만 원 (`NEXT_PUBLIC_MONTHLY_BUDGET`) |
@@ -35,7 +35,7 @@
 - **사진 첨부** (선택, 카메라/갤러리)
 - 월 예산 신호등 게이지 (초록/노랑/빨강)
 - 등록 후 자동으로 조회 탭 이동
-- **Slack 지출 등록 알림** (v1.3.0, 비동기 — 실패해도 등록 유지)
+- **Slack 지출 등록 알림** (Supabase Webhook, 실패해도 등록 유지)
 
 ### 조회 탭
 - 연 / 월 / 일 달력·기간 탐색
@@ -48,7 +48,8 @@
 - **인쇄** (HTML 팝업)
 - **복원** (휴지통, 90일 이내 soft delete)
 
-### 운영·백업 (v1.3.0)
+### 운영·백업 (v1.3.0+)
+- **지출 등록 Slack 알림** — DB INSERT → Webhook → Slack (KST 24시간 시각)
 - **일일 백업** — 매일 23:00 KST, 전체 지출 JSON
   - Supabase Storage: `expense-backups/daily/YYYY-MM-DD/expenses.json`
   - Slack 채널: JSON 파일 + 일/월 요약 메시지
@@ -61,21 +62,25 @@
 
 ---
 
-## 3. Slack · 백업 아키텍처
+## 3. Slack · 백업 아키텍처 (v1.3.1)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  지출 등록 (입력 탭)                                              │
-│  insertExpense → (사진 업로드) → notifyExpenseRegistered         │
-│                                      │                           │
-│                                      ▼                           │
-│                              Slack [지출 등록] 메시지              │
+│  [권장] Supabase Database Webhook — expenses INSERT              │
+│       POST /api/slack/webhook  (x-cron-secret: CRON_SECRET)      │
+│              │ await notifyExpenseData()                         │
+│              ▼                                                   │
+│       Slack [지출 등록] YYYY-MM-DD HH:mm:ss · 카테고리 · 금액      │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│  [백업] 앱 insertExpense → POST /api/slack/notify-expense        │
+│         (Webhook 설정 후 SLACK_CLIENT_NOTIFY=false 로 중복 방지)  │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
 │  Vercel Cron — 매일 23:00 KST (0 14 * * * UTC)                   │
 │  GET /api/backup/daily  (Authorization: Bearer CRON_SECRET)      │
-│       │                                                          │
 │       ├─► Supabase expenses 전체 조회 (읽기 전용)                  │
 │       ├─► Storage expense-backups/daily/YYYY-MM-DD/expenses.json │
 │       └─► Slack JSON 파일 + 요약 메시지                            │
@@ -84,12 +89,16 @@
 
 | 구분 | 파일 |
 |------|------|
-| 등록 알림 | `src/app/actions/slack.ts` |
+| Webhook 알림 (주) | `src/app/api/slack/webhook/route.ts` |
+| 클라이언트 백업 알림 | `src/app/api/slack/notify-expense/route.ts` |
+| Webhook 인증 | `src/lib/slack/webhook-auth.ts` |
+| 메시지 포맷 | `src/lib/slack/messages.ts` |
 | 일일 백업 API | `src/app/api/backup/daily/route.ts` |
-| Slack 클라이언트 | `src/lib/slack/client.ts`, `messages.ts`, `config.ts` |
+| Slack 클라이언트 | `src/lib/slack/client.ts`, `config.ts` |
 | 백업 JSON | `src/lib/backup/export.ts` |
 | Supabase 서버 | `src/lib/supabase/admin.ts` |
 | Cron 스케줄 | `vercel.json` |
+| Webhook 설정 스크립트 | `scripts/setup-supabase-slack-webhook.sh` |
 
 운영 설정: [SLACK_SETUP.md](SLACK_SETUP.md)
 
@@ -119,6 +128,7 @@
 | `002_soft_delete.sql` | `deleted_at` 컬럼 | 적용됨 |
 | `003_expense_photos.sql` | `photo_url` + `expense-photos` 버킷 | 적용됨 |
 | `004_expense_backups.sql` | `expense-backups` 버킷 (일일 JSON) | 적용됨 |
+| `005_slack_webhook_trigger.sql` | pg_net Webhook 대안 (선택) | 참고용 |
 
 ### Storage
 
@@ -134,11 +144,15 @@
 ```
 src/
 ├── app/
-│   ├── page.tsx              # 메인 (탭·CRUD·Slack 알림 호출)
+│   ├── page.tsx                    # 메인 (탭·CRUD·Slack 백업 호출)
 │   ├── layout.tsx
 │   ├── globals.css
-│   ├── actions/slack.ts      # 지출 등록 Slack 알림 (Server Action)
-│   └── api/backup/daily/route.ts
+│   ├── actions/slack.ts            # (레거시) Server Action
+│   └── api/
+│       ├── backup/daily/route.ts   # 일일 백업 (Cron)
+│       └── slack/
+│           ├── webhook/route.ts    # Supabase INSERT Webhook (주)
+│           └── notify-expense/route.ts
 ├── components/
 │   ├── ExpenseForm.tsx
 │   ├── ExpenseList.tsx
@@ -150,25 +164,32 @@ src/
 │   ├── TrashModal.tsx
 │   └── TabNav.tsx
 └── lib/
-    ├── constants.ts
+    ├── constants.ts                # formatDateTime24KST 등
     ├── exportExcel.ts
     ├── chartData.ts
     ├── filterExpenses.ts
     ├── backup/export.ts
     ├── slack/
+    │   ├── client.ts
+    │   ├── config.ts
+    │   ├── messages.ts
+    │   ├── notify-expense.ts
+    │   ├── trigger-notify.ts
+    │   └── webhook-auth.ts
     └── supabase/
-        ├── client.ts         # 브라우저
-        ├── admin.ts          # 서버 (백업·알림)
+        ├── client.ts
+        ├── admin.ts
         ├── expenses.ts
         ├── storage.ts
         └── types.ts
 supabase/
 ├── schema.sql
-└── migrations/               # 001 ~ 004
+└── migrations/                     # 001 ~ 005
 scripts/
 ├── release.sh
 ├── git-push.sh
 ├── sync-vercel-slack-env.sh
+├── setup-supabase-slack-webhook.sh
 ├── test-slack-notify.sh
 ├── test-daily-backup.sh
 └── restore-from-backup.mjs
@@ -195,6 +216,7 @@ SLACK_NOTIFY_CHANNEL_ID=C...
 SLACK_BACKUP_CHANNEL_ID=C...
 CRON_SECRET=...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
+SLACK_CLIENT_NOTIFY=false          # Webhook 설정 후 중복 알림 방지 (선택)
 ```
 
 Vercel Production 일괄 등록: `npm run vercel:env:slack`
@@ -208,6 +230,7 @@ Vercel Production 일괄 등록: `npm run vercel:env:slack`
 | `npm run dev` | 로컬 개발 서버 |
 | `npm run build` | Production 빌드 |
 | `npm run release -- "메시지"` | 커밋 + push → Vercel 배포 |
+| `npm run slack:webhook:setup` | Supabase Webhook 설정 안내 + Production 테스트 |
 | `npm run slack:test` | Slack 메시지 연결 테스트 |
 | `npm run backup:test` | 로컬 일일 백업 API 테스트 |
 | `npm run backup:restore -- <파일> [--dry-run]` | 백업 JSON 복원 |
@@ -219,7 +242,8 @@ Vercel Production 일괄 등록: `npm run vercel:env:slack`
 
 | 버전 | 날짜 | 내용 |
 |------|------|------|
-| **v1.3.0** | 2026-07-16 | Slack 지출 등록 알림, 일일 백업, Vercel Cron, 복원 스크립트 |
+| **v1.3.1** | 2026-07-16 | Supabase Webhook Slack 알림 안정화, KST 24시간 시각, x-cron-secret |
+| **v1.3.0** | 2026-07-16 | Slack 지출 알림, 일일 백업, Vercel Cron, 복원 스크립트 |
 | v1.2.0 | 2026-07-16 | 운영 관리 문서, CI build, Slack 백업 제안 |
 | v1.1.1 | 2026-07-16 | 날짜 선택, LAN 개발, Git push 자동화 |
 | v1.1.0 | 2026-07-16 | 사진 첨부, soft delete·복원, 엑셀 개선 |
@@ -232,6 +256,11 @@ Vercel Production 일괄 등록: `npm run vercel:env:slack`
 
 | 이슈 | 해결 |
 |------|------|
+| Production Slack 알림 미수신 | Supabase Database Webhook + `await` 전송 |
+| Webhook 200이지만 Slack 없음 | `after()` 제거, `slackSent` 응답으로 확인 |
+| Bearer 헤더 입력 실수 | `x-cron-secret` 헤더 지원 |
+| Server Action / fetch 취소 | Webhook으로 DB INSERT 트리거 |
+| PWA 구버전 JS 캐시 | Cache-Control no-store, Webhook으로 클라이언트 무관화 |
 | 엑셀 `lab()` 색상 오류 | SVG 직접 캡처, 그래프 실패 시에도 시트 1·2 저장 |
 | LAN(192.168.x.x) 로딩 무한 | `allowedDevOrigins` + SSH 443 |
 | GitHub push 인증 | SSH / PAT 자동화 스크립트 |
@@ -258,7 +287,7 @@ Vercel Production 일괄 등록: `npm run vercel:env:slack`
 |------|------|
 | [README.md](../README.md) | 프로젝트 진입·빠른 참조 |
 | [WORK_SUMMARY.md](WORK_SUMMARY.md) | 이 문서 — 기능·구조 종합 |
-| [SLACK_SETUP.md](SLACK_SETUP.md) | Slack·백업 설정·테스트 |
+| [SLACK_SETUP.md](SLACK_SETUP.md) | Slack·Webhook·백업 설정·테스트 |
 | [OPS_MANAGEMENT.md](OPS_MANAGEMENT.md) | 운영·배포·롤백 정책 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | feature 브랜치·PR 절차 |
 | [DEPLOY.md](../DEPLOY.md) | GitHub·Vercel 배포 가이드 |
@@ -278,4 +307,4 @@ Vercel Production 일괄 등록: `npm run vercel:env:slack`
 
 ---
 
-*작성·갱신: 2026-07-16 · store-expense-app v1.3.0*
+*작성·갱신: 2026-07-16 · store-expense-app v1.3.1*

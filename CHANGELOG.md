@@ -9,12 +9,27 @@
 
 ## [Unreleased]
 
+---
+
+## [1.3.1] - 2026-07-16 17:51:16
+
+### Added
+- **Supabase Database Webhook** 기반 지출 등록 Slack 알림 (`POST /api/slack/webhook`)
+- Webhook 인증 `x-cron-secret` 헤더 지원 (`src/lib/slack/webhook-auth.ts`)
+- Slack 알림 본문 **KST 24시간 등록 시각** (`YYYY-MM-DD HH:mm:ss`, `formatDateTime24KST`)
+- Webhook 설정·테스트 스크립트 (`npm run slack:webhook:setup`)
+- SQL trigger 대안 (`supabase/migrations/005_slack_webhook_trigger.sql`)
+- 클라이언트 백업 알림 경로 (`/api/slack/notify-expense`, 재시도·sendBeacon)
+
 ### Fixed
-- Production 지출 등록 Slack 알림 — Server Action 대신 `/api/slack/notify-expense` + keepalive fetch (탭 전환 시 취소 방지)
+- **Production 지출 등록 Slack 알림 미수신** — Server Action 취소 → API Route → Supabase Webhook으로 전환
+- Webhook **200 응답이지만 Slack 미전송** — `after()` 제거, Slack `await` 후 `slackSent` 응답
+- Supabase Webhook payload 테이블명·record 파싱 보강 (`public.expenses`, ID fallback)
+- Slack `chat.postMessage` form-urlencoded 전송 (Production curl·앱 등록 모두 확인)
+- PWA 캐시로 구버전 JS 사용 — `Cache-Control: no-store` 등 반영
 
 ### Changed
-- 필수 개발 문서에 Slack·백업(v1.3.0) 내용 반영
-  (`README`, `WORK_SUMMARY`, `OPS_MANAGEMENT`, `DEPLOY`, `CONTRIBUTING`, `SLACK_SETUP`, `SLACK_BACKUP_PROPOSAL`)
+- Slack·백업 운영 문서 전면 갱신 (`README`, `WORK_SUMMARY`, `SLACK_SETUP`, `OPS_MANAGEMENT`, `DEPLOY`)
 
 ---
 
@@ -75,7 +90,9 @@
 - Supabase + Vercel 배포
 - PWA manifest
 
-[Unreleased]: https://github.com/gprl1357-hash/store-expense-app/compare/v1.2.0...main
+[Unreleased]: https://github.com/gprl1357-hash/store-expense-app/compare/v1.3.1...main
+[1.3.1]: https://github.com/gprl1357-hash/store-expense-app/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/gprl1357-hash/store-expense-app/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/gprl1357-hash/store-expense-app/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/gprl1357-hash/store-expense-app/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/gprl1357-hash/store-expense-app/compare/v1.0.0...v1.1.0

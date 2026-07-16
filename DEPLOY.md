@@ -141,7 +141,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase anon public key>
 NEXT_PUBLIC_MONTHLY_BUDGET=10000000
 ```
 
-### 필수 — Slack · 일일 백업 (v1.3.0, 서버 전용)
+### 필수 — Slack · 일일 백업 (v1.3.1, 서버 전용)
 
 ```
 SLACK_ENABLED=true
@@ -153,6 +153,7 @@ SUPABASE_SERVICE_ROLE_KEY=<Supabase service_role key>
 ```
 
 > `.env.local`에 설정 후 일괄 등록: `npm run vercel:env:slack`  
+> Supabase Webhook (지출 알림): `npm run slack:webhook:setup`  
 > 상세: [docs/SLACK_SETUP.md](docs/SLACK_SETUP.md)
 
 4. **Deploy** 클릭

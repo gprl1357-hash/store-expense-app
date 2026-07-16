@@ -7,7 +7,7 @@
 | **운영 URL** | https://store-expense-app.vercel.app |
 | **어르신 사용 가이드** | [docs/사용가이드.md](docs/사용가이드.md) |
 | **작업·기능 정리** | [docs/WORK_SUMMARY.md](docs/WORK_SUMMARY.md) |
-| **변경 이력** | [CHANGELOG.md](CHANGELOG.md) (현재 **v1.3.0**) |
+| **변경 이력** | [CHANGELOG.md](CHANGELOG.md) (현재 **v1.3.1**) |
 | **운영 관리** | [docs/OPS_MANAGEMENT.md](docs/OPS_MANAGEMENT.md) |
 | **기여·배포** | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
 | **Slack·백업** | [docs/SLACK_SETUP.md](docs/SLACK_SETUP.md) |
@@ -20,7 +20,7 @@
 |------|------|
 | Frontend | Next.js 16 (App Router), Tailwind CSS 4, lucide-react, recharts |
 | Backend/DB | Supabase (PostgreSQL + Realtime + Storage) |
-| 알림·백업 | Slack Bot API, Vercel Cron |
+| 알림·백업 | Slack Bot API, Supabase Webhook, Vercel Cron |
 | 배포 | GitHub → Vercel (Production 자동 배포) |
 | CI | GitHub Actions (`npm run build` 검증) |
 
@@ -44,6 +44,7 @@ npm run dev                        # http://localhost:3000
 | `npm run slack:test` | Slack 연결·메시지 전송 테스트 |
 | `npm run backup:test` | 일일 백업 API 로컬 테스트 |
 | `npm run backup:restore -- <파일.json> [--dry-run]` | 백업 JSON 복원 |
+| `npm run slack:webhook:setup` | Supabase Webhook 설정 안내 + Production 테스트 |
 | `npm run vercel:env:slack` | `.env.local` Slack 변수 → Vercel Production 동기화 |
 
 ---
@@ -66,10 +67,11 @@ npm run dev                        # http://localhost:3000
 | `SLACK_BOT_TOKEN` | Slack Bot OAuth Token (`xoxb-...`) |
 | `SLACK_NOTIFY_CHANNEL_ID` | 지출 등록 알림 채널 |
 | `SLACK_BACKUP_CHANNEL_ID` | 일일 백업 파일·요약 채널 |
-| `CRON_SECRET` | `/api/backup/daily` 인증 |
+| `CRON_SECRET` | Webhook·백업 API 인증 |
 | `SUPABASE_SERVICE_ROLE_KEY` | Storage 백업 저장·복원 |
+| `SLACK_CLIENT_NOTIFY` | `false`면 클라이언트 백업 알림 끔 (Webhook 설정 후) |
 
-상세 설정: [docs/SLACK_SETUP.md](docs/SLACK_SETUP.md)
+상세 설정: [docs/SLACK_SETUP.md](docs/SLACK_SETUP.md) · 일괄 등록: `npm run vercel:env:slack`
 
 ---
 
@@ -78,6 +80,7 @@ npm run dev                        # http://localhost:3000
 1. [Supabase Dashboard](https://supabase.com/dashboard) → SQL Editor
 2. `supabase/schema.sql` (최초) 또는 `supabase/migrations/00X_*.sql` 순서대로 실행
 3. **Database → Replication** 에서 `expenses` Realtime 활성화
+4. **Database → Webhooks** — 지출 등록 Slack 알림 (1회, [SLACK_SETUP.md](docs/SLACK_SETUP.md))
 
 | 마이그레이션 | 내용 |
 |-------------|------|
@@ -85,21 +88,24 @@ npm run dev                        # http://localhost:3000
 | `002_soft_delete.sql` | `deleted_at` (휴지통) |
 | `003_expense_photos.sql` | `photo_url` + `expense-photos` 버킷 |
 | `004_expense_backups.sql` | `expense-backups` 버킷 (일일 JSON 백업) |
+| `005_slack_webhook_trigger.sql` | pg_net Webhook 대안 (선택) |
 
 ---
 
-## Slack · 일일 백업 (v1.3.0)
+## Slack · 일일 백업 (v1.3.1)
 
 | 기능 | 동작 |
 |------|------|
-| **지출 등록 알림** | 등록 성공 후 Slack `[지출 등록]` 메시지 (실패해도 등록은 유지) |
+| **지출 등록 알림** | Supabase Webhook → Slack `[지출 등록]` (KST `YYYY-MM-DD HH:mm:ss`) |
 | **일일 백업** | 매일 23:00 KST — 전체 지출 JSON → Supabase Storage + Slack 파일 |
 | **복원** | Slack에서 JSON 다운로드 → `npm run backup:restore` |
 
 ```
-지출 등록 → insertExpense → notifyExpenseRegistered (Server Action) → Slack
+expenses INSERT → Supabase Webhook → POST /api/slack/webhook → Slack
 Vercel Cron (23:00) → GET /api/backup/daily → Supabase 조회 → Storage + Slack
 ```
+
+Webhook 1회 설정: `npm run slack:webhook:setup` · 상세: [docs/SLACK_SETUP.md](docs/SLACK_SETUP.md)
 
 ---
 
@@ -132,29 +138,27 @@ Cron 스케줄 (`vercel.json`): `0 14 * * *` UTC = **매일 23:00 KST**
 ```
 src/
 ├── app/
-│   ├── page.tsx                 # 메인 (탭·CRUD)
-│   ├── actions/slack.ts         # 지출 등록 Slack 알림
-│   └── api/backup/daily/        # 일일 백업 API (Cron)
-├── components/                  # UI 컴포넌트
+│   ├── page.tsx
+│   ├── actions/slack.ts
+│   └── api/
+│       ├── backup/daily/           # 일일 백업 (Cron)
+│       └── slack/
+│           ├── webhook/            # Supabase INSERT Webhook (주)
+│           └── notify-expense/     # 클라이언트 백업
+├── components/
 └── lib/
-    ├── constants.ts
-    ├── exportExcel.ts
-    ├── backup/export.ts         # 백업 JSON 생성
-    ├── slack/                     # Slack 클라이언트·메시지
-    └── supabase/                  # client, admin, expenses, storage
-supabase/
-├── schema.sql
-└── migrations/                  # 001 ~ 004
+    ├── constants.ts                # formatDateTime24KST 등
+    ├── backup/export.ts
+    ├── slack/                      # client, messages, webhook-auth
+    └── supabase/
+supabase/migrations/                # 001 ~ 005
 scripts/
-├── release.sh                   # 커밋 + push
-├── sync-vercel-slack-env.sh     # Vercel Slack env 동기화
-├── test-slack-notify.sh
-├── test-daily-backup.sh
+├── setup-supabase-slack-webhook.sh
+├── sync-vercel-slack-env.sh
 └── restore-from-backup.mjs
 docs/
-├── WORK_SUMMARY.md              # 기능·작업 종합 정리
-├── SLACK_SETUP.md               # Slack·백업 운영 가이드
-├── OPS_MANAGEMENT.md
+├── WORK_SUMMARY.md
+├── SLACK_SETUP.md
 └── 사용가이드.md
 ```
 
