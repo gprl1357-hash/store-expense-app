@@ -68,6 +68,24 @@ export function formatDate(dateStr: string): string {
   return `${m}월 ${d}일`;
 }
 
+const KST = "Asia/Seoul";
+
+/** ISO 시각 → KST 24시간 (YYYY-MM-DD HH:mm:ss) */
+export function formatDateTime24KST(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+
+  const date = d.toLocaleDateString("sv-SE", { timeZone: KST });
+  const time = d.toLocaleTimeString("sv-SE", {
+    timeZone: KST,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  return `${date} ${time}`;
+}
+
 /** YYYY-MM-DD 포맷 */
 export function toDateString(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;

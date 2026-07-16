@@ -1,12 +1,17 @@
-import { APP_TITLE, formatAmount } from "../constants";
+import { APP_TITLE, formatAmount, formatDateTime24KST } from "../constants";
 import type { Expense } from "../supabase/types";
 
 export function formatExpenseNotifyMessage(expense: Expense): string {
   const memo = expense.memo?.trim() ? expense.memo.trim() : "(없음)";
   const photo = expense.photo_url ? "📷 사진 첨부" : "";
+  const registeredAt = formatDateTime24KST(expense.created_at);
+  const expenseDateNote =
+    expense.date !== registeredAt.slice(0, 10)
+      ? ` | 지출일: ${expense.date}`
+      : "";
   const lines = [
-    `*[지출 등록]* ${expense.date} · ${expense.category} · ${formatAmount(expense.amount)}`,
-    `작성자: ${expense.created_by} | 메모: ${memo}`,
+    `*[지출 등록]* ${registeredAt} · ${expense.category} · ${formatAmount(expense.amount)}`,
+    `작성자: ${expense.created_by}${expenseDateNote} | 메모: ${memo}`,
   ];
   if (photo) lines.push(photo);
   lines.push(`_${APP_TITLE}_`);
