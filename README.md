@@ -2,116 +2,172 @@
 
 60대 이상 어르신을 포함한 3명이 모바일에서 함께 사용하는 매장 지출 관리 PWA입니다.
 
-**어르신 사용 가이드:** [docs/사용가이드.md](docs/사용가이드.md) · 배포 URL: https://store-expense-app.vercel.app
+| 항목 | 링크 |
+|------|------|
+| **운영 URL** | https://store-expense-app.vercel.app |
+| **어르신 사용 가이드** | [docs/사용가이드.md](docs/사용가이드.md) |
+| **작업·기능 정리** | [docs/WORK_SUMMARY.md](docs/WORK_SUMMARY.md) |
+| **변경 이력** | [CHANGELOG.md](CHANGELOG.md) (현재 **v1.3.0**) |
+| **운영 관리** | [docs/OPS_MANAGEMENT.md](docs/OPS_MANAGEMENT.md) |
+| **기여·배포** | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
+| **Slack·백업** | [docs/SLACK_SETUP.md](docs/SLACK_SETUP.md) |
 
-**운영 관리:** [CHANGELOG.md](CHANGELOG.md) · [docs/OPS_MANAGEMENT.md](docs/OPS_MANAGEMENT.md) · [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
+---
 
 ## 기술 스택
 
-- **Frontend:** Next.js (App Router), Tailwind CSS, lucide-react
-- **Backend/DB:** Supabase (PostgreSQL + Realtime)
-- **배포:** Vercel
+| 영역 | 기술 |
+|------|------|
+| Frontend | Next.js 16 (App Router), Tailwind CSS 4, lucide-react, recharts |
+| Backend/DB | Supabase (PostgreSQL + Realtime + Storage) |
+| 알림·백업 | Slack Bot API, Vercel Cron |
+| 배포 | GitHub → Vercel (Production 자동 배포) |
+| CI | GitHub Actions (`npm run build` 검증) |
+
+---
 
 ## 로컬 개발
 
 ```bash
-# 의존성 설치
 npm install
-
-# 환경변수 설정
-cp .env.local.example .env.local
-# .env.local 에 Supabase URL / anon key 입력
-
-# 개발 서버 실행
-npm run dev
+cp .env.local.example .env.local   # Supabase + (선택) Slack 변수 입력
+npm run dev                        # http://localhost:3000
 ```
 
-브라우저에서 [http://localhost:3000](http://localhost:3000) 접속
+### 주요 npm 스크립트
+
+| 명령 | 설명 |
+|------|------|
+| `npm run dev` | 개발 서버 (LAN 접속: `0.0.0.0`) |
+| `npm run build` | Production 빌드 (배포·CI 전 필수) |
+| `npm run release -- "메시지"` | 커밋 + GitHub push → Vercel 자동 배포 |
+| `npm run slack:test` | Slack 연결·메시지 전송 테스트 |
+| `npm run backup:test` | 일일 백업 API 로컬 테스트 |
+| `npm run backup:restore -- <파일.json> [--dry-run]` | 백업 JSON 복원 |
+| `npm run vercel:env:slack` | `.env.local` Slack 변수 → Vercel Production 동기화 |
+
+---
+
+## 환경 변수
+
+### 클라이언트 (Vercel + `.env.local`)
+
+| 변수 | 설명 |
+|------|------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon public key |
+| `NEXT_PUBLIC_MONTHLY_BUDGET` | 월 예산 (원, 기본 10,000,000) |
+
+### 서버 전용 (`NEXT_PUBLIC_` 금지 · Git 커밋 금지)
+
+| 변수 | 설명 |
+|------|------|
+| `SLACK_ENABLED` | `false`면 Slack 전송 비활성 |
+| `SLACK_BOT_TOKEN` | Slack Bot OAuth Token (`xoxb-...`) |
+| `SLACK_NOTIFY_CHANNEL_ID` | 지출 등록 알림 채널 |
+| `SLACK_BACKUP_CHANNEL_ID` | 일일 백업 파일·요약 채널 |
+| `CRON_SECRET` | `/api/backup/daily` 인증 |
+| `SUPABASE_SERVICE_ROLE_KEY` | Storage 백업 저장·복원 |
+
+상세 설정: [docs/SLACK_SETUP.md](docs/SLACK_SETUP.md)
+
+---
 
 ## Supabase 설정
 
 1. [Supabase Dashboard](https://supabase.com/dashboard) → SQL Editor
-2. `supabase/schema.sql` 파일 내용 전체 실행
-3. **Database → Replication** 에서 `expenses` 테이블 Realtime 활성화 확인
+2. `supabase/schema.sql` (최초) 또는 `supabase/migrations/00X_*.sql` 순서대로 실행
+3. **Database → Replication** 에서 `expenses` Realtime 활성화
 
-## Git 형상관리
+| 마이그레이션 | 내용 |
+|-------------|------|
+| `001_update_users.sql` | 작성자 이름 |
+| `002_soft_delete.sql` | `deleted_at` (휴지통) |
+| `003_expense_photos.sql` | `photo_url` + `expense-photos` 버킷 |
+| `004_expense_backups.sql` | `expense-backups` 버킷 (일일 JSON 백업) |
 
-```bash
-# 상태 확인
-git status
+---
 
-# 변경사항 커밋
-git add .
-git commit -m "변경 내용 설명"
+## Slack · 일일 백업 (v1.3.0)
 
-# 원격 저장소에 push
-git push origin main
+| 기능 | 동작 |
+|------|------|
+| **지출 등록 알림** | 등록 성공 후 Slack `[지출 등록]` 메시지 (실패해도 등록은 유지) |
+| **일일 백업** | 매일 23:00 KST — 전체 지출 JSON → Supabase Storage + Slack 파일 |
+| **복원** | Slack에서 JSON 다운로드 → `npm run backup:restore` |
+
+```
+지출 등록 → insertExpense → notifyExpenseRegistered (Server Action) → Slack
+Vercel Cron (23:00) → GET /api/backup/daily → Supabase 조회 → Storage + Slack
 ```
 
-### 브랜치 전략
+---
+
+## Git · 배포
+
+```bash
+git status
+npm run build                              # 배포 전 확인
+npm run release -- "변경 설명"              # 커밋 + push → Vercel 자동 배포
+```
 
 | 브랜치 | 용도 |
 |--------|------|
-| `main` | 프로덕션 (Vercel 자동 배포) |
-| `feature/*` | 기능 개발 |
+| `main` | Production (https://store-expense-app.vercel.app) |
+| `feature/*` | 기능 개발 → PR → Preview 확인 후 merge |
 
-## Vercel 배포
+자세한 절차: [DEPLOY.md](DEPLOY.md) · [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
 
-### 1. GitHub 저장소 연결
+### Vercel 환경변수 (Production)
 
-1. GitHub에 `store-expense-app` 저장소 생성
-2. 로컬에서 원격 연결 후 push:
+기본 3개(Supabase·예산) + Slack·백업 6개.  
+일괄 등록: `npm run vercel:env:slack` (`.env.local` 기준)
 
-```bash
-git remote add origin https://github.com/<YOUR_USERNAME>/store-expense-app.git
-# 예: git remote add origin https://github.com/gprl1357-hash/store-expense-app.git
-git push -u origin main
-```
+Cron 스케줄 (`vercel.json`): `0 14 * * *` UTC = **매일 23:00 KST**
 
-### 2. Vercel 프로젝트 생성
-
-1. [vercel.com/new](https://vercel.com/new) 접속
-2. GitHub 저장소 `store-expense-app` Import
-3. Framework Preset: **Next.js** (자동 감지)
-
-### 3. 환경변수 설정 (Vercel Dashboard → Settings → Environment Variables)
-
-| 변수명 | 값 | 환경 |
-|--------|-----|------|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://mklmpbtozqteofgeksrc.supabase.co` | Production, Preview, Development |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon public key | Production, Preview, Development |
-| `NEXT_PUBLIC_MONTHLY_BUDGET` | `10000000` | Production, Preview, Development |
-
-> ⚠️ `.env.local` 은 Git에 포함되지 않습니다. Vercel에 반드시 별도 등록하세요.
-
-### 4. 배포
-
-- `main` 브랜치 push 시 **Production** 자동 배포
-- PR 생성 시 **Preview** URL 자동 생성
-
-### CLI로 배포 (선택)
-
-```bash
-npx vercel login
-npx vercel link
-npx vercel env pull .env.local   # Vercel 환경변수 로컬 동기화
-npx vercel --prod                # 프로덕션 배포
-```
-
-## CI (GitHub Actions)
-
-`main` 브랜치 push 및 PR 시 자동으로 lint + build 검증합니다.
-(`.github/workflows/ci.yml`)
+---
 
 ## 프로젝트 구조
 
 ```
 src/
-├── app/              # Next.js App Router
-├── components/       # UI 컴포넌트
+├── app/
+│   ├── page.tsx                 # 메인 (탭·CRUD)
+│   ├── actions/slack.ts         # 지출 등록 Slack 알림
+│   └── api/backup/daily/        # 일일 백업 API (Cron)
+├── components/                  # UI 컴포넌트
 └── lib/
     ├── constants.ts
-    └── supabase/     # Supabase 클라이언트 & CRUD
+    ├── exportExcel.ts
+    ├── backup/export.ts         # 백업 JSON 생성
+    ├── slack/                     # Slack 클라이언트·메시지
+    └── supabase/                  # client, admin, expenses, storage
 supabase/
-└── schema.sql        # DB 스키마
+├── schema.sql
+└── migrations/                  # 001 ~ 004
+scripts/
+├── release.sh                   # 커밋 + push
+├── sync-vercel-slack-env.sh     # Vercel Slack env 동기화
+├── test-slack-notify.sh
+├── test-daily-backup.sh
+└── restore-from-backup.mjs
+docs/
+├── WORK_SUMMARY.md              # 기능·작업 종합 정리
+├── SLACK_SETUP.md               # Slack·백업 운영 가이드
+├── OPS_MANAGEMENT.md
+└── 사용가이드.md
 ```
+
+---
+
+## CI (GitHub Actions)
+
+`main` push 및 PR 시 `.github/workflows/build.yml`로 `npm run build` 검증.  
+배포는 Vercel이 담당합니다.
+
+---
+
+## 저장소
+
+- GitHub: https://github.com/gprl1357-hash/store-expense-app
+- Production: https://store-expense-app.vercel.app

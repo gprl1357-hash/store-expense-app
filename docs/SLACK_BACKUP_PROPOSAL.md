@@ -1,7 +1,22 @@
 # Slack 운영 데이터 백업 구성 제안
 
+> **상태:** ✅ **v1.3.0에서 1·2단계 구현 완료** (2026-07-16)  
+> **운영 가이드:** [SLACK_SETUP.md](SLACK_SETUP.md)  
+> **기능 정리:** [WORK_SUMMARY.md](WORK_SUMMARY.md)
+
+---
+
 > **목표:** Supabase(운영 DB)의 지출 데이터를 주기적으로 Slack에 백업·알림  
 > **원칙:** 배포(코드)와 데이터(DB) 분리 — 백업은 **읽기 전용** 조회만 수행
+
+### 구현 현황 (v1.3.0)
+
+| 제안 단계 | 내용 | 상태 |
+|----------|------|------|
+| 1단계 | 지출 등록 Slack 알림 + 일일 요약 | ✅ |
+| 2단계 | 일일 JSON 파일 Slack·Storage 백업 | ✅ |
+| 3단계 | Storage 사진 zip·장기 보관 | ⬜ 미구현 |
+| 주간 엑셀 | 매주 xlsx Slack 업로드 | ⬜ 미구현 |
 
 ---
 
@@ -132,11 +147,10 @@ Slack 백업은 **운영 편의용**이고, Supabase Dashboard의 **Point-in-Tim
 
 ## 7. 다음 단계
 
-원하시면 아래 순서로 **코드 구현** 가능합니다.
+~~1~4단계 코드 구현~~ → **v1.3.0 완료**. 아래는 향후 확장:
 
-1. `src/app/api/backup/slack/route.ts` — daily/weekly 백업 API
-2. `vercel.json` — Cron 스케줄
-3. `.env.local.example` — Slack·Cron 환경변수 템플릿
-4. `docs/사용가이드.md` — 백업 채널 안내 (관리자용)
+1. 주간 엑셀 파일 Slack 업로드 (`mode=weekly`)
+2. Storage 사진 zip 백업
+3. Supabase PITR + Slack 백업 병행 점검
 
-**Slack 워크스페이스 URL**과 **원하는 주기(매일/매주)** 를 알려주시면 1단계부터 바로 구현할 수 있습니다.
+운영 설정·테스트: [SLACK_SETUP.md](SLACK_SETUP.md)

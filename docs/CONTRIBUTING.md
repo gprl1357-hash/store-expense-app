@@ -61,6 +61,7 @@ GitHub에서 **Pull Request** → `main` 대상으로 생성.
    - 형식: `## [1.x.x] - YYYY-MM-DD HH:MM:SS` (KST, 24시간)  
    - 예: `## [1.3.0] - 2026-07-16 15:30:00`
 4. (선택) `git tag -a v1.x.x -m "설명" && git push origin v1.x.x`
+5. Slack·백업 env 변경 시: `npm run vercel:env:slack` 후 `npx vercel --prod` (재배포)
 
 ---
 
@@ -70,6 +71,8 @@ GitHub에서 **Pull Request** → `main` 대상으로 생성.
 2. Supabase Dashboard → SQL Editor에서 **수동 실행**
 3. 앱 코드 변경 → feature 브랜치 → PR → merge
 4. CHANGELOG에 **Database** 섹션 기록
+
+현재 마이그레이션: `001` ~ `004` (004: `expense-backups` Storage 버킷)
 
 ---
 

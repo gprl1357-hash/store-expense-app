@@ -22,7 +22,7 @@ CLI로 매번 Vercel 명령을 칠 필요 없습니다.
 | ① | `./scripts/push-with-token.sh` 또는 `gh auth login` | ☐ |
 | ② | `git push -u origin main` 으로 GitHub 업로드 | ☐ |
 | ③ | [vercel.com/new](https://vercel.com/new) → GitHub 연동 → `store-expense-app` Import | ☐ |
-| ④ | Vercel Environment Variables 3개 등록 (아래 참고) | ☐ |
+| ④ | Vercel Environment Variables 등록 (아래 참고) | ☐ |
 | ⑤ | Deploy 완료 확인 | ☐ |
 
 **③이 핵심입니다.** Vercel과 GitHub를 연결하면, 이후 `main` 브랜치 push마다 **자동 배포**됩니다.
@@ -131,7 +131,9 @@ git push -u origin main
 
 1. https://vercel.com/new 접속 → GitHub 연동
 2. **`gprl1357-hash/store-expense-app`** 저장소 Import
-3. Environment Variables 추가:
+3. Environment Variables 추가 (Production):
+
+### 필수 — 앱 기본
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://mklmpbtozqteofgeksrc.supabase.co
@@ -139,7 +141,26 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase anon public key>
 NEXT_PUBLIC_MONTHLY_BUDGET=10000000
 ```
 
+### 필수 — Slack · 일일 백업 (v1.3.0, 서버 전용)
+
+```
+SLACK_ENABLED=true
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_NOTIFY_CHANNEL_ID=C...
+SLACK_BACKUP_CHANNEL_ID=C...
+CRON_SECRET=<랜덤 긴 문자열>
+SUPABASE_SERVICE_ROLE_KEY=<Supabase service_role key>
+```
+
+> `.env.local`에 설정 후 일괄 등록: `npm run vercel:env:slack`  
+> 상세: [docs/SLACK_SETUP.md](docs/SLACK_SETUP.md)
+
 4. **Deploy** 클릭
+
+### Cron (자동 일일 백업)
+
+`vercel.json`에 정의됨 — **매일 23:00 KST** (`0 14 * * *` UTC)  
+Production 배포에만 적용됩니다.
 
 ---
 

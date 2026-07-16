@@ -28,10 +28,16 @@
                                       └──────────────────────────►       │
                                                          store-expense-app.vercel.app
                                                                       │
-┌─────────────┐                                                       │
-│  Supabase   │ ◄─────────────── NEXT_PUBLIC_* (읽기/쓰기) ───────────┘
-│  (운영 DB)  │
-└─────────────┘
+                    ┌─────────────────────────────────────────────────┤
+                    │                                                 │
+                    ▼                                                 ▼
+           ┌─────────────┐                                   ┌─────────────┐
+           │  Supabase   │ ◄── NEXT_PUBLIC_* (앱 CRUD)       │    Slack    │
+           │  (운영 DB)  │ ◄── service role (백업 Storage)   │  알림·백업   │
+           └─────────────┘                                   └─────────────┘
+                    ▲
+                    │ Cron 23:00 KST → /api/backup/daily (읽기 전용)
+                    └──────────────── Vercel
 ```
 
 | 환경 | URL / 위치 | 용도 | 데이터 |
@@ -96,7 +102,7 @@ git push origin v1.1.0
 4. main merge → Vercel 자동 Production 배포 (1~2분)
 5. store-expense-app.vercel.app 에서 핵심 기능 3분 smoke test
 6. CHANGELOG + git tag (선택)
-7. Slack #매장-지출-백업 채널에 「v1.1.0 배포 완료」 한 줄 (백업 연동 후)
+7. Slack 채널에 「v1.x.x 배포 완료」 한 줄 (선택)
 ```
 
 ### 긴급 핫픽스
@@ -114,7 +120,9 @@ git push origin v1.1.0
 - [ ] `.env.local` / 시크릿 파일 **커밋 안 됨** 확인
 - [ ] Supabase **마이그레이션** 필요 시 → SQL 먼저 실행, 그다음 코드 배포
 - [ ] `docs/사용가이드.md` UI 변경 시 업데이트
+- [ ] Slack·백업 env 변경 시 `npm run vercel:env:slack` + 재배포
 - [ ] Preview 또는 로컬에서 **입력 → 조회 → 엑셀** 한 번씩
+- [ ] Slack 기능 변경 시 **등록 알림**·`npm run backup:test` 확인
 
 ---
 
@@ -156,9 +164,10 @@ supabase/schema.sql                ← 전체 스키마 참고용 동기화
 | 항목 | 보관 위치 | Git 포함 |
 |------|-----------|----------|
 | Supabase anon key | Vercel Env, `.env.local` | ❌ |
-| Supabase **service role** | Vercel Env (백업 API만) | ❌ |
+| Supabase **service role** | Vercel Env, `.env.local` (백업·복원만) | ❌ |
 | GitHub SSH / PAT | Keychain, `.env.local` GITHUB_TOKEN | ❌ |
-| Slack Bot Token | Vercel Env (추후) | ❌ |
+| Slack Bot Token | Vercel Env, `.env.local` | ❌ |
+| CRON_SECRET | Vercel Env, `.env.local` | ❌ |
 
 **접근 권한 (권장)**
 
@@ -200,13 +209,14 @@ jobs:
 | 사이트 다운 | [UptimeRobot](https://uptimerobot.com) 무료 | 5분 ping |
 | Vercel 배포 실패 | Vercel 이메일 알림 ON | 이벤트 |
 | Supabase 사용량 | Dashboard → Usage | 월 1회 |
-| 지출 데이터 | Slack 백업 (별도 제안) | 매일/매주 |
+| 지출 등록 알림 | Slack Bot | 지출 등록 시 |
+| 지출 데이터 백업 | Slack + Storage (`/api/backup/daily`) | **매일 23:00 KST** |
 | npm 보안 | `npm audit` | 분기 1회 |
 
 **Smoke test (배포 후 3분)**
 
 1. 앱 열림
-2. 지출 1건 입력 (테스트 후 삭제 또는 휴지통)
+2. 지출 1건 입력 → Slack `[지출 등록]` 알림 (선택 확인)
 3. 조회 탭 목록 표시
 4. 예산 게이지 숫자 정상
 
@@ -218,6 +228,7 @@ jobs:
 |------|------|
 | `CHANGELOG.md` | **매 Production 배포** |
 | `docs/사용가이드.md` | UI·기능 변경 시 |
+| `docs/SLACK_SETUP.md` | Slack·백업 설정·테스트 변경 시 |
 | `docs/WORK_SUMMARY.md` | 큰 기능 묶음 완료 시 |
 | `docs/SBOM.json` | `package.json` 의존성 변경 시 |
 | `DEPLOY.md` | 배포 방법 변경 시 |
@@ -261,28 +272,28 @@ jobs:
 
 ---
 
-## 14. 지금 당장 적용할 Top 5
+## 14. 현재 운영 상태 (v1.3.0)
 
-| # | 작업 | 효과 |
-|---|------|------|
-| 1 | **`CHANGELOG.md` 생성** + 앞으로 배포마다 기록 | 무엇이 바뀌었는지 추적 |
-| 2 | **feature 브랜치** 습관 (`main` 직접 push 줄이기) | Preview로 배포 전 확인 |
-| 3 | **GitHub `main` 브랜치 보호** (Settings → Rules) | force push·실수 merge 방지 |
-| 4 | **CI build.yml** 복구 | 깨진 코드 운영 반영 차단 |
-| 5 | **Slack 백업 1단계** (일일 요약) | 데이터 + 배포 알림 통합 |
-
----
-
-## 15. 다음 단계 (구현 지원)
-
-원하시면 아래를 코드·설정으로 바로 추가할 수 있습니다.
-
-1. `CHANGELOG.md` + `v1.1.0` 태그
-2. `.github/workflows/build.yml` (CI)
-3. GitHub branch protection 설정 가이드
-4. `docs/incidents/` 템플릿
-5. Slack 일일 요약 Cron (백업 1단계)
+| 항목 | 상태 |
+|------|------|
+| Production | https://store-expense-app.vercel.app |
+| Slack 지출 등록 알림 | ✅ 운영 중 |
+| 일일 백업 (23:00 KST) | ✅ Vercel Cron |
+| CI (`build.yml`) | ✅ `npm run build` |
+| Git tag | `v1.3.0` |
 
 ---
 
-*작성: 2026-07-16 · store-expense-app 운영 관리 체계 v1*
+## 15. 참고 · 다음 확장
+
+| 문서 | 내용 |
+|------|------|
+| [SLACK_SETUP.md](SLACK_SETUP.md) | Slack·백업 설정·테스트·복원 |
+| [WORK_SUMMARY.md](WORK_SUMMARY.md) | 기능·구조 종합 정리 |
+| [SLACK_BACKUP_PROPOSAL.md](SLACK_BACKUP_PROPOSAL.md) | 초기 설계 제안 (참고) |
+
+**선택 확장:** 주간 엑셀 Slack 업로드, Supabase PITR, Auth 추가
+
+---
+
+*갱신: 2026-07-16 · store-expense-app 운영 관리 체계 v1.3*

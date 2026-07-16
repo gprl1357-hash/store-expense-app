@@ -12,6 +12,10 @@
 ### Added
 - (다음 배포 예정 항목)
 
+### Changed
+- 필수 개발 문서에 Slack·백업(v1.3.0) 내용 반영
+  (`README`, `WORK_SUMMARY`, `OPS_MANAGEMENT`, `DEPLOY`, `CONTRIBUTING`, `SLACK_SETUP`, `SLACK_BACKUP_PROPOSAL`)
+
 ---
 
 ## [1.3.0] - 2026-07-16 15:43:38

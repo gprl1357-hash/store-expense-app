@@ -1,137 +1,204 @@
-# Slack 알림 · 일일 백업 설정 (개발·운영)
+# Slack 알림 · 일일 백업 운영 가이드
 
-개발 환경에서 Slack 알림과 일일 백업을 테스트하기 위한 설정 가이드입니다.
-
----
-
-## 1. Slack 앱 만들기 (1회)
-
-1. https://api.slack.com/apps → **Create New App** → **From scratch**
-2. **OAuth & Permissions** → Bot Token Scopes 추가:
-   - `chat:write` — 지출 등록 알림
-   - `files:write` — 일일 백업 JSON 파일 업로드
-3. **Install to Workspace** → **Bot User OAuth Token** (`xoxb-...`) 복사
-4. Slack에서 `#매장-지출-백업` (또는 원하는) **비공개 채널** 생성
-5. 채널에 앱 초대: `/invite @앱이름`
-6. 채널 ID 확인: 채널 우클릭 → **채널 세부정보** → 하단 ID (`C...`)
+> **상태:** v1.3.0 Production 운영 중  
+> **관련:** [WORK_SUMMARY.md](WORK_SUMMARY.md) · [OPS_MANAGEMENT.md](OPS_MANAGEMENT.md) · [CHANGELOG.md](../CHANGELOG.md)
 
 ---
 
-## 2. Supabase Storage (백업 보관)
+## 1. 기능 요약
 
-Supabase Dashboard → **SQL Editor**에서 실행:
+| 기능 | 트리거 | 결과 |
+|------|--------|------|
+| **지출 등록 알림** | 앱에서 지출 등록 | Slack `[지출 등록]` 메시지 |
+| **일일 백업** | Vercel Cron 23:00 KST | JSON → Storage + Slack 파일 |
+| **수동 백업** | `npm run backup:test` 또는 curl | 위와 동일 |
+| **복원** | `npm run backup:restore` | 백업 JSON → DB upsert |
 
-```sql
--- supabase/migrations/004_expense_backups.sql 내용
+알림 실패 시 **지출 등록은 정상 유지** (비동기·오류 무시).
+
+---
+
+## 2. 아키텍처
+
+```
+[입력 탭] insertExpense → notifyExpenseRegistered (Server Action)
+                              │
+                              ▼
+                        Slack chat.postMessage
+
+[Vercel Cron] GET /api/backup/daily  (Bearer CRON_SECRET)
+       │
+       ├─ Supabase expenses 전체 조회 (읽기만)
+       ├─ Storage: expense-backups/daily/YYYY-MM-DD/expenses.json
+       └─ Slack: files.upload + 요약 메시지
 ```
 
-`expense-backups` 버킷에 일별 JSON이 저장됩니다.  
-경로 예: `daily/2026-07-16/expenses.json`
-
-> **운영 DB:** 마이그레이션은 **읽기·추가(백업 저장)만** 수행합니다. 기존 지출 데이터는 변경하지 않습니다.
+| 코드 | 역할 |
+|------|------|
+| `src/app/actions/slack.ts` | 등록 알림 (DB 존재 건만 전송) |
+| `src/app/api/backup/daily/route.ts` | 일일 백업 API |
+| `src/lib/slack/` | Slack API 클라이언트 |
+| `src/lib/backup/export.ts` | 백업 JSON·통계 |
+| `src/lib/supabase/admin.ts` | 서버용 Supabase (service role) |
+| `vercel.json` | Cron `0 14 * * *` (23:00 KST) |
 
 ---
 
-## 3. `.env.local` 설정
+## 3. Slack 앱 설정 (1회)
+
+1. https://api.slack.com/apps → **Create New App** → **From scratch**
+2. **OAuth & Permissions** → Bot Token Scopes:
+   - `chat:write` — 지출 등록 알림
+   - `files:write` — 일일 백업 JSON 업로드
+3. **Install to Workspace** → Bot Token (`xoxb-...`) 복사
+4. **비공개 채널** 생성 (예: `#매장-지출-백업`)
+5. 채널에 앱 초대: `/invite @앱이름`
+6. 채널 ID: 채널 우클릭 → **채널 세부정보** → 하단 `C...`
+
+---
+
+## 4. Supabase Storage
+
+SQL Editor에서 실행:
+
+```sql
+-- supabase/migrations/004_expense_backups.sql
+```
+
+| 버킷 | 경로 예 | 용도 |
+|------|---------|------|
+| `expense-backups` | `daily/2026-07-16/expenses.json` | 일일 전체 지출 JSON |
+
+> 기존 지출 데이터는 **변경하지 않음**. 백업 저장(추가)만 수행.
+
+---
+
+## 5. 환경 변수
+
+### `.env.local` (로컬) · Vercel Production (운영)
 
 ```bash
-# Slack (서버 전용 — NEXT_PUBLIC 금지)
+# 서버 전용 — NEXT_PUBLIC_ 금지, Git 커밋 금지
 SLACK_ENABLED=true
 SLACK_BOT_TOKEN=xoxb-your-bot-token
 SLACK_NOTIFY_CHANNEL_ID=C0123456789
 SLACK_BACKUP_CHANNEL_ID=C0123456789
-
-# 일일 백업 Cron 인증 (랜덤 긴 문자열)
 CRON_SECRET=your-random-secret-string
-
-# 백업 API·복원 스크립트용 (Dashboard > API > service_role)
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
-| 변수 | 용도 |
+| 변수 | 설명 |
 |------|------|
-| `SLACK_BOT_TOKEN` | Slack API 호출 |
-| `SLACK_NOTIFY_CHANNEL_ID` | 지출 등록 시 알림 |
-| `SLACK_BACKUP_CHANNEL_ID` | 매일 23:00 백업 파일·요약 |
-| `CRON_SECRET` | `/api/backup/daily` 인증 |
-| `SUPABASE_SERVICE_ROLE_KEY` | Storage 백업 저장·복원 |
+| `SLACK_BOT_TOKEN` | Slack Bot OAuth Token |
+| `SLACK_NOTIFY_CHANNEL_ID` | 지출 등록 알림 채널 |
+| `SLACK_BACKUP_CHANNEL_ID` | 일일 백업 채널 (동일 채널 가능) |
+| `CRON_SECRET` | 백업 API 인증 (`openssl rand -hex 32` 권장) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Storage 저장·복원 (Dashboard → API → service_role) |
+| `SLACK_ENABLED` | `false`면 Slack 전송 끔 |
 
-`SLACK_ENABLED=false` 이면 알림·백업 Slack 전송을 끕니다 (로컬 개발 시 유용).
+Vercel 일괄 등록:
+
+```bash
+npm run vercel:env:slack
+npx vercel --prod    # env 반영 재배포
+```
 
 ---
 
-## 4. 개발 환경 테스트
+## 6. 테스트
 
-### 4-1. 지출 등록 알림
+### 로컬
 
 ```bash
 npm run dev
+npm run slack:test      # Slack 연결 확인
+npm run backup:test     # 일일 백업 (dev 서버 실행 중)
 ```
 
-1. `.env.local`에 Slack 변수 설정
-2. 앱에서 지출 1건 등록
-3. Slack 채널에 `[지출 등록]` 메시지 확인
+지출 1건 등록 → Slack `[지출 등록]` 확인.
 
-알림 실패해도 **지출 등록은 정상** 동작합니다 (비동기·오류 무시).
-
-### 4-2. 일일 백업 (수동)
-
-개발 서버 실행 중:
+### Production
 
 ```bash
-chmod +x scripts/test-daily-backup.sh
-npm run backup:test
+# 수동 백업 (CRON_SECRET 필요)
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  https://store-expense-app.vercel.app/api/backup/daily
 ```
 
-또는:
+https://store-expense-app.vercel.app 에서 지출 등록 → Slack 알림 확인.
 
-```bash
-curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/backup/daily
+---
+
+## 7. 백업 · 복원
+
+### 백업 JSON 구조
+
+```json
+{
+  "schemaVersion": 1,
+  "exportedAt": "2026-07-16T06:00:00.000Z",
+  "store": "제주은희네...",
+  "stats": { "activeCount": 308, "todayCount": 1, ... },
+  "expenses": [ ... ]
+}
 ```
 
-성공 시:
-- Slack 채널에 JSON 파일 + 요약 메시지
-- Supabase Storage `expense-backups/daily/YYYY-MM-DD/expenses.json`
+- **활성 + 휴지통** 전체 포함 (완전 복원용)
+- Slack에서 JSON 다운로드 또는 Supabase Storage에서 조회
 
-### 4-3. 백업 복원
-
-Slack에서 JSON 파일 다운로드 후:
+### 복원
 
 ```bash
 # 미리보기 (DB 변경 없음)
 npm run backup:restore -- ./expenses-backup-2026-07-16.json --dry-run
 
-# 실제 복원 (upsert — 같은 id는 덮어씀)
+# 실제 복원 (id 기준 upsert)
 npm run backup:restore -- ./expenses-backup-2026-07-16.json
 ```
 
----
-
-## 5. Vercel 배포 (Preview·Production)
-
-Vercel Dashboard → **Settings → Environment Variables**에 위 서버 변수 추가:
-
-- `SLACK_BOT_TOKEN`
-- `SLACK_NOTIFY_CHANNEL_ID`
-- `SLACK_BACKUP_CHANNEL_ID`
-- `CRON_SECRET`
-- `SUPABASE_SERVICE_ROLE_KEY`
-
-`vercel.json` Cron: **매일 23:00 KST** (`0 14 * * *` UTC) 자동 백업.
-
-> Hobby 플랜 Cron 제한이 있을 수 있습니다. Preview 배포에서는 Cron이 동작하지 않을 수 있어, Production에서 확인하세요.
+> 복원은 **관리자만** 실행. 운영 DB에 덮어쓰므로 `--dry-run`으로 먼저 확인.
 
 ---
 
-## 6. 관련 파일
+## 8. npm 스크립트
 
-| 파일 | 설명 |
+| 명령 | 설명 |
 |------|------|
-| `src/app/actions/slack.ts` | 지출 등록 Slack 알림 |
-| `src/app/api/backup/daily/route.ts` | 일일 백업 API |
-| `src/lib/slack/` | Slack 클라이언트·메시지 |
-| `src/lib/backup/export.ts` | 백업 JSON 생성 |
-| `scripts/test-daily-backup.sh` | 로컬 백업 테스트 |
-| `scripts/restore-from-backup.mjs` | 백업 복원 |
+| `npm run slack:test` | Slack 메시지 전송 테스트 |
+| `npm run backup:test` | 로컬 백업 API 호출 |
+| `npm run backup:restore -- <파일> [--dry-run]` | 백업 복원 |
+| `npm run vercel:env:slack` | `.env.local` → Vercel Production env |
 
-제안 문서: `docs/SLACK_BACKUP_PROPOSAL.md`
+---
+
+## 9. 보안
+
+| 항목 | 권장 |
+|------|------|
+| Bot Token · service role | Git·`.env.local.example`에 넣지 않음 |
+| Slack 채널 | 비공개, 멤버만 |
+| CRON_SECRET | 추측 불가능한 긴 문자열 |
+| 백업 파일 | 작성자명 포함 → 접근 통제 |
+
+---
+
+## 10. 트러블슈팅
+
+| 증상 | 확인 |
+|------|------|
+| 알림 없음 | `SLACK_ENABLED`, Bot Token, 채널 ID, 앱 채널 초대 |
+| 백업 401 | `CRON_SECRET` 헤더 `Authorization: Bearer ...` |
+| Storage 실패 | `004_expense_backups.sql` 실행, service role key |
+| `invalid_arguments` (Slack 파일) | `src/lib/slack/client.ts` form-urlencoded 사용 (v1.3.0 수정됨) |
+| Cron 미실행 | Vercel Hobby 플랜·Production 배포 여부 확인 |
+
+---
+
+## 11. 참고
+
+- 초기 설계 제안: [SLACK_BACKUP_PROPOSAL.md](SLACK_BACKUP_PROPOSAL.md)
+- Supabase 공식 백업(PITR)은 **재해 복구용**으로 Slack 백업과 병행 권장
+
+---
+
+*갱신: 2026-07-16 · v1.3.0*
