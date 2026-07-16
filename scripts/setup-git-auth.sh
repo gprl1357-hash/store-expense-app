@@ -37,9 +37,10 @@ setup_ssh() {
   if ! grep -q "Host github.com" "$SSH_CONFIG" 2>/dev/null; then
     cat >> "$SSH_CONFIG" << EOF
 
-# store-expense-app GitHub
+# store-expense-app GitHub (443 — Wi-Fi에서 22번 차단 시)
 Host github.com
-  HostName github.com
+  HostName ssh.github.com
+  Port 443
   User git
   IdentityFile ${SSH_KEY}
   AddKeysToAgent yes
