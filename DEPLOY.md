@@ -19,7 +19,7 @@ CLI로 매번 Vercel 명령을 칠 필요 없습니다.
 
 | # | 작업 | 상태 |
 |---|------|------|
-| ① | `brew install gh` 후 `gh auth login` (Google SSO) | ☐ |
+| ① | `./scripts/push-with-token.sh` 또는 `gh auth login` | ☐ |
 | ② | `git push -u origin main` 으로 GitHub 업로드 | ☐ |
 | ③ | [vercel.com/new](https://vercel.com/new) → GitHub 연동 → `store-expense-app` Import | ☐ |
 | ④ | Vercel Environment Variables 3개 등록 (아래 참고) | ☐ |
@@ -51,6 +51,34 @@ git add . && git commit -m "메시지" && git push origin main
 ---
 
 ## 1. GitHub push (터미널에서 실행)
+
+### brew 없을 때 (권장)
+
+Homebrew가 없으면 **PAT(토큰) 방식**이 가장 간단합니다.
+
+```bash
+cd /Users/hyekihong/store-expense-app
+./scripts/push-with-token.sh
+```
+
+1. https://github.com/settings/tokens/new 접속 (Google SSO 로그인)
+2. **repo** 권한 체크 → **Generate token**
+3. `ghp_...` 토큰 복사 → 스크립트에 붙여넣기
+
+### Homebrew 설치가 필요할 때
+
+`brew: command not found` → Homebrew 미설치 상태입니다.
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# 설치 후 PATH 추가 (Apple Silicon)
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
+brew install gh
+gh auth login
+```
+
+### 일반 push
 
 ```bash
 cd /Users/hyekihong/store-expense-app

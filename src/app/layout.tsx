@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: "매장 지출 관리",
   description: "매장 지출을 함께 기록하고 관리하는 앱",
   manifest: "/manifest.json",
+  icons: {
+    apple: "/icon-192.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
