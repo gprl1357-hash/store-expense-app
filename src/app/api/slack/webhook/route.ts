@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { after } from "next/server";
-import { notifyExpenseData, parseExpensePayload } from "@/lib/slack/notify-expense";
+import {
+  notifyExpenseById,
+  notifyExpenseData,
+  parseExpensePayload,
+} from "@/lib/slack/notify-expense";
 import { isSlackEnabled } from "@/lib/slack/config";
 import { verifySlackWebhookAuth } from "@/lib/slack/webhook-auth";
 
@@ -12,29 +15,52 @@ type SupabaseWebhookPayload = {
   old_record?: unknown;
 };
 
+function normalizeWebhookPayload(raw: unknown): SupabaseWebhookPayload {
+  if (!raw || typeof raw !== "object") return {};
+  const body = raw as Record<string, unknown>;
+
+  // Supabase Dashboard / pg_net 공통 형식
+  if (body.type && body.table) {
+    return body as SupabaseWebhookPayload;
+  }
+
+  // 중첩 payload 대비
+  if (body.data && typeof body.data === "object") {
+    return body.data as SupabaseWebhookPayload;
+  }
+
+  return body as SupabaseWebhookPayload;
+}
+
 function isExpensesInsert(body: SupabaseWebhookPayload): boolean {
   const type = body.type?.toUpperCase();
-  const table = body.table?.toLowerCase();
-  return type === "INSERT" && table === "expenses";
+  const table = body.table?.toLowerCase() ?? "";
+  const isInsert = type === "INSERT";
+  const isExpensesTable =
+    table === "expenses" ||
+    table === "public.expenses" ||
+    table.endsWith(".expenses");
+  return isInsert && isExpensesTable;
+}
+
+function extractRecordId(record: unknown): string | null {
+  if (!record || typeof record !== "object") return null;
+  const id = (record as Record<string, unknown>).id;
+  return typeof id === "string" && id ? id : null;
 }
 
 /** Supabase Database Webhook — expenses INSERT 시 Slack 알림 */
 export async function POST(request: NextRequest) {
   if (!verifySlackWebhookAuth(request)) {
-    console.warn("[slack] webhook 401 — Authorization 또는 x-cron-secret 확인");
-    return NextResponse.json(
-      {
-        error: "Unauthorized",
-        hint: "Header: x-cron-secret: <CRON_SECRET> 또는 Authorization: Bearer <CRON_SECRET>",
-      },
-      { status: 401 }
-    );
+    console.warn("[slack] webhook 401 — x-cron-secret 확인");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const body = (await request.json()) as SupabaseWebhookPayload;
+    const body = normalizeWebhookPayload(await request.json());
 
     if (!isExpensesInsert(body)) {
+      console.warn("[slack] webhook skipped:", body.type, body.table);
       return NextResponse.json({
         ok: true,
         skipped: true,
@@ -48,8 +74,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, skipped: true, reason: "slack_disabled" });
     }
 
-    const expense = parseExpensePayload(body.record);
+    let expense = parseExpensePayload(body.record);
+
     if (!expense) {
+      const recordId = extractRecordId(body.record);
+      if (recordId) {
+        const sent = await notifyExpenseById(recordId);
+        return NextResponse.json({
+          ok: sent,
+          expenseId: recordId,
+          source: "webhook",
+          mode: "expenseId_fallback",
+          slackSent: sent,
+        });
+      }
+
       console.warn("[slack] webhook invalid record:", JSON.stringify(body.record));
       return NextResponse.json({ error: "invalid expense record" }, { status: 400 });
     }
@@ -58,26 +97,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, skipped: true, reason: "soft_deleted" });
     }
 
-    // Supabase 기본 timeout(1s) 대비 — 먼저 200 응답, Slack은 백그라운드 전송
-    after(async () => {
-      try {
-        await notifyExpenseData(expense);
-        console.log("[slack] webhook sent:", expense.id);
-      } catch (err) {
-        console.error("[slack] webhook after() 실패:", expense.id, err);
-      }
-    });
+    // after()는 Vercel에서 Slack 전송 전 종료될 수 있음 — 반드시 await
+    const sent = await notifyExpenseData(expense);
+
+    if (!sent) {
+      return NextResponse.json(
+        { ok: false, error: "slack_send_failed", expenseId: expense.id },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       ok: true,
-      queued: true,
       expenseId: expense.id,
       source: "webhook",
+      slackSent: true,
     });
   } catch (err) {
     console.error("[slack] webhook 실패:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "webhook failed" },
+      {
+        error: err instanceof Error ? err.message : "webhook failed",
+        slackSent: false,
+      },
       { status: 500 }
     );
   }
