@@ -33,6 +33,7 @@ export function ExpenseModal({
   const [memo, setMemo] = useState(expense.memo ?? "");
   const [loading, setLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showFullPhoto, setShowFullPhoto] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -161,7 +162,7 @@ export function ExpenseModal({
               onChange={(e) => handleAmountChange(e.target.value)}
               className="min-h-14 w-full rounded-2xl px-5 text-2xl font-bold ring-2 ring-gray-200"
             />
-            <div className="mt-2 grid grid-cols-4 gap-2">
+            <div className="mt-2 grid grid-cols-3 gap-2">
               {AMOUNT_SHORTCUTS.map((s) => (
                 <button
                   key={s.label}
@@ -194,6 +195,25 @@ export function ExpenseModal({
               className="min-h-14 w-full rounded-2xl px-5 text-xl ring-2 ring-gray-200"
             />
           </div>
+
+          {expense.photo_url && (
+            <div>
+              <p className="mb-2 text-lg font-semibold text-gray-700">첨부 사진</p>
+              <button
+                type="button"
+                onClick={() => setShowFullPhoto(true)}
+                className="block w-full overflow-hidden rounded-2xl ring-2 ring-gray-200"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={expense.photo_url}
+                  alt="첨부 사진"
+                  className="max-h-56 w-full object-cover"
+                />
+              </button>
+              <p className="mt-1 text-sm text-gray-400">터치하면 크게 볼 수 있습니다</p>
+            </div>
+          )}
         </div>
 
         <div className="mt-8 space-y-3">
@@ -213,10 +233,33 @@ export function ExpenseModal({
             className="flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl bg-red-600 text-xl font-bold text-white disabled:opacity-60"
           >
             <Trash2 className="h-6 w-6" />
-            {confirmDelete ? "정말 삭제할까요? (한 번 더 누르세요)" : "삭제"}
+            {confirmDelete ? "휴지통으로 보낼까요? (한 번 더 누르세요)" : "휴지통으로"}
           </button>
         </div>
       </div>
+
+      {showFullPhoto && expense.photo_url && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setShowFullPhoto(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setShowFullPhoto(false)}
+            className="absolute right-4 top-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white"
+            aria-label="닫기"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={expense.photo_url}
+            alt="첨부 사진 전체 보기"
+            className="max-h-full max-w-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

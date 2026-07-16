@@ -12,7 +12,7 @@ const FILTERS: UserFilter[] = ["전체", ...USERS];
 
 export function UserFilterBar({ selected, onChange }: UserFilterBarProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
+    <div className="flex gap-3 overflow-x-auto pb-1">
       {FILTERS.map((filter) => {
         const isActive = selected === filter;
         return (
@@ -20,10 +20,10 @@ export function UserFilterBar({ selected, onChange }: UserFilterBarProps) {
             key={filter}
             type="button"
             onClick={() => onChange(filter)}
-            className={`min-h-14 shrink-0 rounded-2xl px-5 text-lg font-semibold transition-colors ${
+            className={`min-h-16 shrink-0 rounded-2xl px-5 text-lg font-bold transition-colors ${
               isActive
-                ? "bg-blue-600 text-white shadow-md"
-                : "bg-white text-gray-700 ring-1 ring-gray-200"
+                ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-700"
+                : "bg-white text-gray-800 ring-2 ring-gray-200"
             }`}
           >
             {filter}

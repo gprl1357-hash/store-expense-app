@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
+import { APP_TITLE, APP_TITLE_SHORT } from "@/lib/constants";
 import "./globals.css";
 
 const notoSansKr = Noto_Sans_KR({
@@ -9,8 +10,8 @@ const notoSansKr = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: "매장 지출 관리",
-  description: "매장 지출을 함께 기록하고 관리하는 앱",
+  title: APP_TITLE,
+  description: `${APP_TITLE} - 함께 기록하고 관리하는 앱`,
   manifest: "/manifest.json",
   icons: {
     apple: "/icon-192.png",
@@ -18,15 +19,13 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "지출관리",
+    title: APP_TITLE_SHORT,
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: "#2563eb",
 };
 
@@ -37,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={`${notoSansKr.variable} h-full`}>
-      <body className="min-h-full bg-gray-50 font-sans text-lg antialiased">
+      <body className="min-h-full bg-gray-50 font-sans text-xl antialiased">
         {children}
       </body>
     </html>

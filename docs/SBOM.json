@@ -1,0 +1,206 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:store-expense-app-0.1.0",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-07-16T03:00:00Z",
+    "tools": [
+      {
+        "vendor": "Cursor",
+        "name": "SBOM Generator",
+        "version": "1.0"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "name": "store-expense-app",
+      "version": "0.1.0",
+      "description": "제주은희네해장국광명GIDC 매장 지출 관리 웹앱 (Next.js PWA)",
+      "licenses": [{ "license": { "id": "UNLICENSED" } }],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gprl1357-hash/store-expense-app"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "next",
+      "version": "16.2.10",
+      "purl": "pkg:npm/next@16.2.10",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "description": "React 프레임워크 (App Router, SSR/SSG)"
+    },
+    {
+      "type": "library",
+      "name": "react",
+      "version": "19.2.4",
+      "purl": "pkg:npm/react@19.2.4",
+      "licenses": [{ "license": { "id": "MIT" } }]
+    },
+    {
+      "type": "library",
+      "name": "react-dom",
+      "version": "19.2.4",
+      "purl": "pkg:npm/react-dom@19.2.4",
+      "licenses": [{ "license": { "id": "MIT" } }]
+    },
+    {
+      "type": "library",
+      "name": "@supabase/supabase-js",
+      "version": "2.110.5",
+      "purl": "pkg:npm/%40supabase/supabase-js@2.110.5",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "description": "Supabase 클라이언트 (DB, Realtime, Storage)"
+    },
+    {
+      "type": "library",
+      "name": "exceljs",
+      "version": "4.4.0",
+      "purl": "pkg:npm/exceljs@4.4.0",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "description": "엑셀(.xlsx) 생성·내보내기"
+    },
+    {
+      "type": "library",
+      "name": "html2canvas",
+      "version": "1.4.1",
+      "purl": "pkg:npm/html2canvas@1.4.1",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "description": "그래프 캡처 폴백 (SVG 캡처 실패 시)"
+    },
+    {
+      "type": "library",
+      "name": "recharts",
+      "version": "3.9.2",
+      "purl": "pkg:npm/recharts@3.9.2",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "description": "도넛·막대 차트"
+    },
+    {
+      "type": "library",
+      "name": "lucide-react",
+      "version": "1.24.0",
+      "purl": "pkg:npm/lucide-react@1.24.0",
+      "licenses": [{ "license": { "id": "ISC" } }],
+      "description": "아이콘"
+    },
+    {
+      "type": "library",
+      "name": "xlsx",
+      "version": "0.18.5",
+      "purl": "pkg:npm/xlsx@0.18.5",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "description": "초기 프로토타입용 (현재 exceljs 사용, 제거 예정)"
+    },
+    {
+      "type": "library",
+      "name": "tailwindcss",
+      "group": "dev",
+      "version": "4.3.2",
+      "purl": "pkg:npm/tailwindcss@4.3.2",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "description": "유틸리티 CSS"
+    },
+    {
+      "type": "library",
+      "name": "@tailwindcss/postcss",
+      "group": "dev",
+      "version": "4.3.2",
+      "purl": "pkg:npm/%40tailwindcss/postcss@4.3.2",
+      "licenses": [{ "license": { "id": "MIT" } }]
+    },
+    {
+      "type": "library",
+      "name": "typescript",
+      "group": "dev",
+      "version": "5.9.3",
+      "purl": "pkg:npm/typescript@5.9.3",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }]
+    },
+    {
+      "type": "library",
+      "name": "eslint",
+      "group": "dev",
+      "version": "9.39.5",
+      "purl": "pkg:npm/eslint@9.39.5",
+      "licenses": [{ "license": { "id": "MIT" } }]
+    },
+    {
+      "type": "library",
+      "name": "eslint-config-next",
+      "group": "dev",
+      "version": "16.2.10",
+      "purl": "pkg:npm/eslint-config-next@16.2.10",
+      "licenses": [{ "license": { "id": "MIT" } }]
+    },
+    {
+      "type": "library",
+      "name": "@types/node",
+      "group": "dev",
+      "version": "20.19.43",
+      "purl": "pkg:npm/%40types/node@20.19.43",
+      "licenses": [{ "license": { "id": "MIT" } }]
+    },
+    {
+      "type": "library",
+      "name": "@types/react",
+      "group": "dev",
+      "version": "19.2.17",
+      "purl": "pkg:npm/%40types/react@19.2.17",
+      "licenses": [{ "license": { "id": "MIT" } }]
+    },
+    {
+      "type": "library",
+      "name": "@types/react-dom",
+      "group": "dev",
+      "version": "19.2.3",
+      "purl": "pkg:npm/%40types/react-dom@19.2.3",
+      "licenses": [{ "license": { "id": "MIT" } }]
+    }
+  ],
+  "services": [
+    {
+      "name": "Supabase",
+      "description": "PostgreSQL, Realtime, Storage (BaaS)",
+      "externalReferences": [
+        { "type": "website", "url": "https://supabase.com" }
+      ]
+    },
+    {
+      "name": "Vercel",
+      "description": "프론트엔드 호스팅·CDN",
+      "externalReferences": [
+        { "type": "website", "url": "https://vercel.com" }
+      ]
+    },
+    {
+      "name": "GitHub",
+      "description": "소스 저장소·버전 관리",
+      "externalReferences": [
+        { "type": "website", "url": "https://github.com/gprl1357-hash/store-expense-app" }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/next@16.2.10",
+      "dependsOn": [
+        "pkg:npm/react@19.2.4",
+        "pkg:npm/react-dom@19.2.4"
+      ]
+    },
+    {
+      "ref": "pkg:npm/recharts@3.9.2",
+      "dependsOn": ["pkg:npm/react@19.2.4"]
+    },
+    {
+      "ref": "pkg:npm/lucide-react@1.24.0",
+      "dependsOn": ["pkg:npm/react@19.2.4"]
+    }
+  ]
+}

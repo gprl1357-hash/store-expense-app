@@ -16,34 +16,34 @@ export function BudgetGauge({ totalSpent }: BudgetGaugeProps) {
   const { bar, text, label } = getBudgetColor(ratio);
 
   return (
-    <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-      <div className="mb-3 flex items-end justify-between">
+    <section className="rounded-2xl bg-white p-5 shadow-sm ring-2 ring-gray-100">
+      <div className="mb-4 flex items-end justify-between">
         <div>
-          <p className="text-lg text-gray-500">이번 달 지출</p>
-          <p className="text-3xl font-bold tracking-tight">
+          <p className="text-xl text-gray-600">이번 달 지출</p>
+          <p className="text-4xl font-bold tracking-tight text-gray-900">
             {formatAmount(totalSpent)}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-lg text-gray-500">월 예산</p>
-          <p className="text-xl font-semibold text-gray-700">
+          <p className="text-xl text-gray-600">월 예산</p>
+          <p className="text-2xl font-bold text-gray-800">
             {formatAmount(MONTHLY_BUDGET)}
           </p>
         </div>
       </div>
 
-      <div className="relative h-8 overflow-hidden rounded-full bg-gray-100">
+      <div className="relative h-10 overflow-hidden rounded-full bg-gray-200">
         <div
           className={`h-full rounded-full transition-all duration-500 ${bar}`}
           style={{ width: `${percent}%` }}
         />
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-lg">
+      <div className="mt-4 flex flex-col gap-1 text-xl sm:flex-row sm:items-center sm:justify-between">
         <span className={`font-bold ${text}`}>
           {label} · {percent}%
         </span>
-        <span className="text-gray-500">
+        <span className="font-semibold text-gray-700">
           남은 예산 {formatAmount(Math.max(MONTHLY_BUDGET - totalSpent, 0))}
         </span>
       </div>

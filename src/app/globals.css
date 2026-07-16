@@ -3,6 +3,9 @@
 :root {
   --background: #f9fafb;
   --foreground: #111827;
+  /* 60대+ 가독성: 최소 터치 영역 56px, 본문 20px */
+  --touch-min: 3.5rem;
+  --text-body: 1.25rem;
 }
 
 @theme inline {
@@ -15,18 +18,27 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.6;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 
-/* iOS 입력창 줌 방지 */
+/* iOS 입력창 줌 방지 + 큰 글씨 */
 input,
 select,
-textarea {
-  font-size: 18px;
+textarea,
+button {
+  font-size: 20px;
 }
 
 /* 스크롤바 숨김 (필터 가로 스크롤) */
 .overflow-x-auto::-webkit-scrollbar {
   display: none;
+}
+
+/* 포커스 링 — 키보드/터치 구분 없이 잘 보이게 */
+:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
 }

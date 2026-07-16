@@ -8,6 +8,8 @@ export type Expense = {
   memo: string | null;
   created_by: User;
   created_at: string;
+  deleted_at: string | null;
+  photo_url: string | null;
 };
 
 export type ExpenseInsert = {
@@ -16,25 +18,30 @@ export type ExpenseInsert = {
   amount: number;
   memo?: string | null;
   created_by: User;
+  photo_url?: string | null;
 };
 
 export type ExpenseUpdate = Partial<
-  Pick<Expense, "date" | "category" | "amount" | "memo" | "created_by">
+  Pick<Expense, "date" | "category" | "amount" | "memo" | "created_by" | "photo_url">
 >;
+
+type ExpenseRow = {
+  id: string;
+  date: string;
+  category: string;
+  amount: number;
+  memo: string | null;
+  created_by: string;
+  created_at: string;
+  deleted_at?: string | null;
+  photo_url?: string | null;
+};
 
 export type Database = {
   public: {
     Tables: {
       expenses: {
-        Row: {
-          id: string;
-          date: string;
-          category: string;
-          amount: number;
-          memo: string | null;
-          created_by: string;
-          created_at: string;
-        };
+        Row: ExpenseRow;
         Insert: {
           id?: string;
           date?: string;
@@ -43,6 +50,8 @@ export type Database = {
           memo?: string | null;
           created_by: string;
           created_at?: string;
+          deleted_at?: string | null;
+          photo_url?: string | null;
         };
         Update: {
           id?: string;
@@ -52,6 +61,8 @@ export type Database = {
           memo?: string | null;
           created_by?: string;
           created_at?: string;
+          deleted_at?: string | null;
+          photo_url?: string | null;
         };
         Relationships: [];
       };
@@ -64,7 +75,7 @@ export type Database = {
 };
 
 /** Supabase에서 받은 numeric 타입을 number로 변환 */
-export function parseExpense(row: Database["public"]["Tables"]["expenses"]["Row"]): Expense {
+export function parseExpense(row: ExpenseRow): Expense {
   return {
     id: row.id,
     date: row.date,
@@ -73,5 +84,7 @@ export function parseExpense(row: Database["public"]["Tables"]["expenses"]["Row"
     memo: row.memo,
     created_by: row.created_by as User,
     created_at: row.created_at,
+    deleted_at: row.deleted_at ?? null,
+    photo_url: row.photo_url ?? null,
   };
 }

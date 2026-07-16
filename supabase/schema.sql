@@ -10,8 +10,10 @@ CREATE TABLE IF NOT EXISTS public.expenses (
   category    TEXT NOT NULL CHECK (category IN ('식자재', '공과금', '인건비', '기타')),
   amount      NUMERIC(12, 0) NOT NULL CHECK (amount > 0),
   memo        TEXT,
-  created_by  TEXT NOT NULL CHECK (created_by IN ('사용자A', '사용자B', '사용자C')),
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_by  TEXT NOT NULL CHECK (created_by IN ('홍혜기', '홍성미', '손선애')),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at  TIMESTAMPTZ DEFAULT NULL,
+  photo_url   TEXT DEFAULT NULL
 );
 
 -- 2. 조회 성능을 위한 인덱스

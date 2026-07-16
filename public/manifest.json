@@ -1,7 +1,7 @@
 {
-  "name": "매장 지출 관리",
-  "short_name": "지출관리",
-  "description": "매장 지출을 함께 기록하고 관리하는 앱",
+  "name": "제주은희네해장국광명GIDC 매장 지출 관리",
+  "short_name": "은희네 지출관리",
+  "description": "제주은희네해장국광명GIDC 매장 지출을 함께 기록하고 관리하는 앱",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f9fafb",

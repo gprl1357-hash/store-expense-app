@@ -2,7 +2,7 @@
 
 import { CATEGORIES, formatAmount, formatDate } from "@/lib/constants";
 import type { Expense } from "@/lib/supabase/types";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ImageIcon } from "lucide-react";
 
 type ExpenseListProps = {
   expenses: Expense[];
@@ -29,28 +29,33 @@ export function ExpenseList({ expenses, onSelect }: ExpenseListProps) {
           <button
             type="button"
             onClick={() => onSelect(expense)}
-            className="flex min-h-20 w-full items-center gap-4 rounded-2xl bg-white px-5 py-4 text-left shadow-sm ring-1 ring-gray-100 active:bg-gray-50"
+            className="flex min-h-[5.5rem] w-full items-center gap-4 rounded-2xl bg-white px-5 py-4 text-left shadow-sm ring-2 ring-gray-100 active:bg-gray-50"
           >
             <span className="text-4xl">{getCategoryEmoji(expense.category)}</span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-gray-800">
+                <span className="text-xl font-bold text-gray-900">
                   {expense.category}
                 </span>
-                <span className="rounded-lg bg-gray-100 px-2 py-0.5 text-base text-gray-600">
+                <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-lg font-semibold text-gray-700">
                   {expense.created_by}
                 </span>
               </div>
-              <p className="truncate text-base text-gray-500">
+              <p className="truncate text-lg text-gray-600">
                 {formatDate(expense.date)}
                 {expense.memo ? ` · ${expense.memo}` : ""}
+                {expense.photo_url ? (
+                  <span className="ml-1 inline-flex items-center text-blue-500">
+                    <ImageIcon className="inline h-4 w-4" aria-hidden />
+                  </span>
+                ) : null}
               </p>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-xl font-bold text-gray-900">
+              <span className="text-2xl font-bold text-gray-900">
                 {formatAmount(expense.amount)}
               </span>
-              <ChevronRight className="h-6 w-6 text-gray-300" />
+              <ChevronRight className="h-7 w-7 text-gray-400" />
             </div>
           </button>
         </li>
