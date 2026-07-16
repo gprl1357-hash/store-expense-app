@@ -4,6 +4,8 @@
 
 **어르신 사용 가이드:** [docs/사용가이드.md](docs/사용가이드.md) · 배포 URL: https://store-expense-app.vercel.app
 
+**운영 관리:** [CHANGELOG.md](CHANGELOG.md) · [docs/OPS_MANAGEMENT.md](docs/OPS_MANAGEMENT.md) · [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
+
 ## 기술 스택
 
 - **Frontend:** Next.js (App Router), Tailwind CSS, lucide-react

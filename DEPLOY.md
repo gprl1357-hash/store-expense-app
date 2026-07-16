@@ -10,7 +10,7 @@ CLI로 매번 Vercel 명령을 칠 필요 없습니다.
                 ↓
          GitHub 저장소 업데이트
                 ↓
-    GitHub Actions (lint + build 검증)
+    GitHub Actions (build 검증)  ← .github/workflows/build.yml
                 ↓
     Vercel 자동 Production 배포  ← 1~2분
 ```
