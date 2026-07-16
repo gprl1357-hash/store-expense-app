@@ -39,6 +39,7 @@ import {
 } from "@/lib/supabase/expenses";
 import { resizeImageFile, uploadExpensePhoto } from "@/lib/supabase/storage";
 import type { Expense } from "@/lib/supabase/types";
+import { notifyExpenseRegistered } from "@/app/actions/slack";
 import { Loader2, RotateCcw } from "lucide-react";
 
 function parseToday() {
@@ -164,6 +165,8 @@ export default function HomePage() {
     photo?: File | null
   ) {
     const expense = await insertExpense(input);
+    let finalId = expense.id;
+
     if (photo) {
       try {
         const resized = await resizeImageFile(photo);
@@ -171,6 +174,7 @@ export default function HomePage() {
         await updateExpense(expense.id, { photo_url: photoUrl });
       } catch (err) {
         console.error(err);
+        void notifyExpenseRegistered(finalId);
         showToast("지출은 등록되었으나 사진 업로드에 실패했습니다");
         setTab("browse");
         loadBudgetExpenses();
@@ -178,6 +182,8 @@ export default function HomePage() {
         return;
       }
     }
+
+    void notifyExpenseRegistered(finalId);
     showToast("지출이 등록되었습니다 ✓");
     setTab("browse");
     loadBudgetExpenses();

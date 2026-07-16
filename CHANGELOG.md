@@ -14,6 +14,19 @@
 
 ---
 
+## [1.3.0] - 2026-07-16 15:43:38
+
+### Added
+- Slack 지출 등록 알림 (Server Action, `SLACK_BOT_TOKEN`)
+- 일일 백업 API (`/api/backup/daily`) — JSON → Storage + Slack 파일
+- Vercel Cron 매일 23:00 KST 백업 스케줄
+- 백업 복원 스크립트 (`npm run backup:restore`)
+- Slack·백업 설정 가이드 (`docs/SLACK_SETUP.md`)
+- Storage 마이그레이션 `004_expense_backups.sql`
+- Vercel Slack 환경변수 동기화 스크립트 (`npm run vercel:env:slack`)
+
+---
+
 ## [1.2.0] - 2026-07-16 14:18:18
 
 ### Added

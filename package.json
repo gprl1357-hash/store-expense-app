@@ -8,7 +8,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "release": "bash scripts/release.sh"
+    "release": "bash scripts/release.sh",
+    "backup:test": "bash scripts/test-daily-backup.sh",
+    "backup:restore": "node scripts/restore-from-backup.mjs",
+    "slack:test": "bash scripts/test-slack-notify.sh",
+    "vercel:env:slack": "bash scripts/sync-vercel-slack-env.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.5",
