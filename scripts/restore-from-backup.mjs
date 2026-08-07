@@ -79,6 +79,7 @@ let fail = 0;
 for (const row of backup.expenses) {
   const payload = {
     id: row.id,
+    store_id: row.store_id ?? "gwangmyeong-gidc",
     date: row.date,
     category: row.category,
     amount: row.amount,

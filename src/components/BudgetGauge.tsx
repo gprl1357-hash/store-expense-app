@@ -1,17 +1,15 @@
 "use client";
 
-import {
-  MONTHLY_BUDGET,
-  formatAmount,
-  getBudgetColor,
-} from "@/lib/constants";
+import { formatAmount, getBudgetColor } from "@/lib/constants";
 
 type BudgetGaugeProps = {
   totalSpent: number;
+  monthlyBudget: number;
 };
 
-export function BudgetGauge({ totalSpent }: BudgetGaugeProps) {
-  const ratio = Math.min(totalSpent / MONTHLY_BUDGET, 1);
+export function BudgetGauge({ totalSpent, monthlyBudget }: BudgetGaugeProps) {
+  const budget = monthlyBudget > 0 ? monthlyBudget : 1;
+  const ratio = Math.min(totalSpent / budget, 1);
   const percent = Math.round(ratio * 100);
   const { bar, text, label } = getBudgetColor(ratio);
 
@@ -27,7 +25,7 @@ export function BudgetGauge({ totalSpent }: BudgetGaugeProps) {
         <div className="text-right">
           <p className="text-xl text-gray-600">월 예산</p>
           <p className="text-2xl font-bold text-gray-800">
-            {formatAmount(MONTHLY_BUDGET)}
+            {formatAmount(monthlyBudget)}
           </p>
         </div>
       </div>
@@ -44,7 +42,7 @@ export function BudgetGauge({ totalSpent }: BudgetGaugeProps) {
           {label} · {percent}%
         </span>
         <span className="font-semibold text-gray-700">
-          남은 예산 {formatAmount(Math.max(MONTHLY_BUDGET - totalSpent, 0))}
+          남은 예산 {formatAmount(Math.max(monthlyBudget - totalSpent, 0))}
         </span>
       </div>
     </section>

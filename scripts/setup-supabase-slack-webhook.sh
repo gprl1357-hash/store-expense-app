@@ -51,7 +51,7 @@ if [[ -n "$SECRET" ]]; then
   curl -sS -X POST "${WEBHOOK_URL}" \
     -H "x-cron-secret: ${SECRET}" \
     -H "Content-Type: application/json" \
-    --data "{\"type\":\"INSERT\",\"table\":\"expenses\",\"schema\":\"public\",\"record\":{\"id\":\"00000000-0000-0000-0000-000000000099\",\"date\":\"2026-07-16\",\"category\":\"기타\",\"amount\":1,\"memo\":\"[Webhook 테스트]\",\"created_by\":\"홍혜기\",\"created_at\":\"2026-07-16T07:00:00.000Z\",\"deleted_at\":null,\"photo_url\":null}}" \
+    --data "{\"type\":\"INSERT\",\"table\":\"expenses\",\"schema\":\"public\",\"record\":{\"id\":\"00000000-0000-0000-0000-000000000099\",\"store_id\":\"gwangmyeong-gidc\",\"date\":\"2026-07-16\",\"category\":\"기타\",\"amount\":1,\"memo\":\"[Webhook 테스트]\",\"created_by\":\"홍혜기\",\"created_at\":\"2026-07-16T07:00:00.000Z\",\"deleted_at\":null,\"photo_url\":null}}" \
     | (command -v jq >/dev/null && jq . || cat)
   echo ""
   echo "Slack 채널에 [Webhook 테스트] 메시지 확인 후,"

@@ -11,6 +11,27 @@
 
 ---
 
+## [1.4.0] - 2026-08-07 21:06:00
+
+### Added
+- **다매장** — 광명GIDC점 / 인천가정점 (`store_id`, 상단 매장 전환)
+- 지점별 작성자 (광명: 홍혜기·홍성미·손선애 / 인천: 홍성미·신계승)
+- 카테고리 **카드** (`💳`)
+- **설정** 탭 — 매장별 월 예산 변경 (`stores.monthly_budget`)
+- DB 마이그레이션 `006_stores_and_card.sql`, 롤백 호환 `007_store_id_default_rollback.sql`
+- 긴급 롤백 문서 [`docs/ROLLBACK.md`](docs/ROLLBACK.md)
+
+### Changed
+- Slack 지출 알림에 **매장명** 표시
+- 매장 전환 시 이전 매장 데이터가 남지 않도록 조회 레이스 수정
+- 사용가이드·README — 다매장·설정·카드 반영
+
+### Database
+- `stores` 테이블 + `expenses.store_id` (기존 행 → 광명GIDC)
+- `created_by`에 `신계승` 허용
+
+---
+
 ## [1.3.1] - 2026-07-16 17:51:16
 
 ### Added

@@ -138,9 +138,10 @@ git push -u origin main
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://mklmpbtozqteofgeksrc.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase anon public key>
-NEXT_PUBLIC_MONTHLY_BUDGET=10000000
+# 월 예산: 앱 설정 탭 (stores.monthly_budget) — NEXT_PUBLIC_MONTHLY_BUDGET 미사용
 ```
 
+배포 전 운영 DB에 `supabase/migrations/006_stores_and_card.sql` 실행 필수.
 ### 필수 — Slack · 일일 백업 (v1.3.1, 서버 전용)
 
 ```

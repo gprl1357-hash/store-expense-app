@@ -1,8 +1,8 @@
 "use client";
 
-import { LayoutGrid, PlusCircle } from "lucide-react";
+import { LayoutGrid, PlusCircle, Settings } from "lucide-react";
 
-export type Tab = "input" | "browse";
+export type Tab = "input" | "browse" | "settings";
 
 type TabNavProps = {
   active: Tab;
@@ -12,12 +12,13 @@ type TabNavProps = {
 const TABS: { value: Tab; label: string; Icon: typeof PlusCircle }[] = [
   { value: "input", label: "지출 입력", Icon: PlusCircle },
   { value: "browse", label: "내역 조회", Icon: LayoutGrid },
+  { value: "settings", label: "설정", Icon: Settings },
 ];
 
 export function TabNav({ active, onChange }: TabNavProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t-2 border-gray-200 bg-white pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto grid max-w-lg grid-cols-2 gap-1 p-1">
+      <div className="mx-auto grid max-w-lg grid-cols-3 gap-1 p-1">
         {TABS.map(({ value, label, Icon }) => {
           const isActive = active === value;
           return (
@@ -31,8 +32,8 @@ export function TabNav({ active, onChange }: TabNavProps) {
                   : "bg-gray-50 text-gray-600 ring-1 ring-gray-200"
               }`}
             >
-              <Icon className="h-8 w-8" strokeWidth={isActive ? 2.5 : 2} />
-              <span className="text-lg font-bold">{label}</span>
+              <Icon className="h-7 w-7" strokeWidth={isActive ? 2.5 : 2} />
+              <span className="text-base font-bold sm:text-lg">{label}</span>
             </button>
           );
         })}

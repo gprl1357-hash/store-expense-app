@@ -5,7 +5,6 @@ import { Loader2, Trash2, X } from "lucide-react";
 import {
   AMOUNT_SHORTCUTS,
   CATEGORIES,
-  USERS,
   type Category,
   type User,
 } from "@/lib/constants";
@@ -13,6 +12,7 @@ import type { Expense, ExpenseUpdate } from "@/lib/supabase/types";
 
 type ExpenseModalProps = {
   expense: Expense;
+  users: readonly User[];
   onClose: () => void;
   onUpdate: (id: string, input: ExpenseUpdate) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -20,6 +20,7 @@ type ExpenseModalProps = {
 
 export function ExpenseModal({
   expense,
+  users,
   onClose,
   onUpdate,
   onDelete,
@@ -114,8 +115,12 @@ export function ExpenseModal({
 
           <div>
             <p className="mb-2 text-lg font-semibold text-gray-700">작성자</p>
-            <div className="grid grid-cols-3 gap-2">
-              {USERS.map((user) => (
+            <div
+              className={`grid gap-2 ${
+                users.length <= 2 ? "grid-cols-2" : "grid-cols-3"
+              }`}
+            >
+              {users.map((user) => (
                 <button
                   key={user}
                   type="button"
@@ -134,19 +139,19 @@ export function ExpenseModal({
 
           <div>
             <p className="mb-2 text-lg font-semibold text-gray-700">카테고리</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.value}
                   type="button"
                   onClick={() => setCategory(cat.value)}
-                  className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl text-base font-bold ${
+                  className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-sm font-bold sm:min-h-16 sm:text-base ${
                     category === cat.value
                       ? "bg-blue-600 text-white"
                       : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  <span className="text-2xl">{cat.emoji}</span>
+                  <span className="text-xl sm:text-2xl">{cat.emoji}</span>
                   {cat.label}
                 </button>
               ))}

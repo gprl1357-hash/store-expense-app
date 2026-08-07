@@ -13,10 +13,11 @@ import { ExpenseSearchBar } from "@/components/ExpenseSearchBar";
 import { ExpenseCharts } from "@/components/ExpenseCharts";
 import { ExportButtons } from "@/components/ExportButtons";
 import { TrashModal } from "@/components/TrashModal";
+import { SettingsPanel } from "@/components/SettingsPanel";
+import { StoreSwitcher } from "@/components/StoreSwitcher";
 import { TabNav, type Tab } from "@/components/TabNav";
 import { UserFilterBar } from "@/components/UserFilterBar";
 import {
-  APP_TITLE,
   formatAmount,
   monthRange,
   todayString,
@@ -24,9 +25,11 @@ import {
   yearRange,
   type PeriodMode,
   type CategoryFilter,
+  type StoreId,
   type UserFilter,
 } from "@/lib/constants";
 import { filterByCategory, filterBySearch } from "@/lib/filterExpenses";
+import { useStore } from "@/lib/store-context";
 import {
   deleteExpense,
   fetchDeletedExpenses,
@@ -47,13 +50,26 @@ function parseToday() {
   return { year: y, month: m, day: d };
 }
 
-function periodLabel(mode: PeriodMode, year: number, month: number, day: number): string {
+function periodLabel(
+  mode: PeriodMode,
+  year: number,
+  month: number,
+  day: number
+): string {
   if (mode === "year") return `${year}년`;
   if (mode === "month") return `${year}년 ${month}월`;
   return `${year}년 ${month}월 ${day}일`;
 }
 
 export default function HomePage() {
+  const {
+    storeId,
+    store,
+    users,
+    monthlyBudget,
+    setStoreId,
+  } = useStore();
+
   const today = parseToday();
   const [tab, setTab] = useState<Tab>("input");
   const [budgetExpenses, setBudgetExpenses] = useState<Expense[]>([]);
@@ -75,41 +91,95 @@ export default function HomePage() {
 
   const loadBudgetExpenses = useCallback(async () => {
     try {
-      const data = await fetchMonthlyExpenses();
+      const data = await fetchMonthlyExpenses(storeId);
       setBudgetExpenses(data);
     } catch (err) {
       console.error(err);
     } finally {
       setBudgetLoading(false);
     }
-  }, []);
+  }, [storeId]);
 
   const loadPeriodExpenses = useCallback(async () => {
     setPeriodLoading(true);
     try {
       const range =
         periodMode === "year" ? yearRange(year) : monthRange(year, month);
-      const data = await fetchExpensesInRange(range.start, range.end);
+      const data = await fetchExpensesInRange(storeId, range.start, range.end);
       setPeriodExpenses(data);
     } catch (err) {
       console.error(err);
     } finally {
       setPeriodLoading(false);
     }
-  }, [periodMode, year, month]);
+  }, [storeId, periodMode, year, month]);
 
   useEffect(() => {
-    loadBudgetExpenses();
-    const unsubscribe = subscribeExpenses(() => {
+    setBudgetLoading(true);
+    setBudgetExpenses([]);
+    setPeriodExpenses([]);
+    setUserFilter("전체");
+    setCategoryFilter("전체");
+    setSearchQuery("");
+    setSelectedExpense(null);
+    setSelectedDayDate(null);
+    setShowTrash(false);
+  }, [storeId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await fetchMonthlyExpenses(storeId);
+        if (!cancelled) setBudgetExpenses(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) setBudgetLoading(false);
+      }
+    })();
+
+    const unsubscribe = subscribeExpenses(storeId, () => {
+      if (cancelled) return;
       loadBudgetExpenses();
       if (tab === "browse") loadPeriodExpenses();
     });
-    return unsubscribe;
-  }, [loadBudgetExpenses, loadPeriodExpenses, tab]);
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [loadBudgetExpenses, loadPeriodExpenses, tab, storeId]);
 
   useEffect(() => {
-    if (tab === "browse") loadPeriodExpenses();
-  }, [tab, loadPeriodExpenses]);
+    if (tab !== "browse") return;
+    let cancelled = false;
+
+    (async () => {
+      setPeriodLoading(true);
+      try {
+        const range =
+          periodMode === "year" ? yearRange(year) : monthRange(year, month);
+        const data = await fetchExpensesInRange(storeId, range.start, range.end);
+        if (!cancelled) setPeriodExpenses(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) setPeriodLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, storeId, periodMode, year, month]);
+
+  useEffect(() => {
+    if (userFilter !== "전체" && !users.includes(userFilter)) {
+      setUserFilter("전체");
+    }
+  }, [users, userFilter]);
 
   const filteredBudget = useMemo(() => {
     if (userFilter === "전체") return budgetExpenses;
@@ -123,7 +193,9 @@ export default function HomePage() {
 
   const periodBaseList = useMemo(() => {
     if (periodMode === "day") {
-      return filteredPeriod.filter((e) => e.date === toDateString(year, month, day));
+      return filteredPeriod.filter(
+        (e) => e.date === toDateString(year, month, day)
+      );
     }
     return filteredPeriod;
   }, [filteredPeriod, periodMode, year, month, day]);
@@ -146,7 +218,8 @@ export default function HomePage() {
 
   const label = periodLabel(periodMode, year, month, day);
   const showExpenseList = periodMode !== "year";
-  const hasActiveFilter = categoryFilter !== "전체" || searchQuery.trim() !== "";
+  const hasActiveFilter =
+    categoryFilter !== "전체" || searchQuery.trim() !== "";
 
   useEffect(() => {
     if (tab !== "browse") {
@@ -158,6 +231,11 @@ export default function HomePage() {
   function showToast(message: string) {
     setToast(message);
     setTimeout(() => setToast(""), 4000);
+  }
+
+  function handleStoreChange(id: StoreId) {
+    if (id === storeId) return;
+    setStoreId(id);
   }
 
   async function handleInsert(
@@ -215,21 +293,33 @@ export default function HomePage() {
     loadPeriodExpenses();
   }
 
-  const loadDeleted = useCallback(() => fetchDeletedExpenses(), []);
+  const loadDeleted = useCallback(
+    () => fetchDeletedExpenses(storeId),
+    [storeId]
+  );
 
   function handleDayClick(dateStr: string) {
     setSelectedDayDate(dateStr);
   }
 
-  const isLoading = tab === "input" ? budgetLoading : periodLoading;
+  const isLoading =
+    tab === "input"
+      ? budgetLoading
+      : tab === "browse"
+        ? periodLoading
+        : false;
 
   return (
     <div className="mx-auto min-h-screen max-w-lg bg-gray-50 pb-28">
       <header className="sticky top-0 z-30 bg-gray-50/95 px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold leading-snug text-gray-900">{APP_TITLE}</h1>
-            <p className="mt-1 text-xl text-gray-600">함께 기록하고 확인해요</p>
+            <h1 className="text-xl font-bold leading-snug text-gray-900 sm:text-2xl">
+              {store.title}
+            </h1>
+            <p className="mt-1 text-lg text-gray-600 sm:text-xl">
+              함께 기록하고 확인해요
+            </p>
           </div>
           {tab === "browse" && (
             <button
@@ -243,88 +333,118 @@ export default function HomePage() {
             </button>
           )}
         </div>
+        <div className="mt-4">
+          <StoreSwitcher selected={storeId} onChange={handleStoreChange} />
+        </div>
       </header>
 
       <main className="space-y-5 px-5">
-        {tab === "input" && <BudgetGauge totalSpent={budgetTotal} />}
-
-        <UserFilterBar selected={userFilter} onChange={setUserFilter} />
-
-        {userFilter !== "전체" && tab === "input" && (
-          <p className="text-center text-lg text-gray-600">
-            <span className="font-bold text-blue-600">{userFilter}</span> 이번 달{" "}
-            <span className="font-bold">{formatAmount(budgetTotal)}</span>
-          </p>
-        )}
-
-        {userFilter !== "전체" && tab === "browse" && !isLoading && (
-          <p className="text-center text-lg text-gray-600">
-            <span className="font-bold text-blue-600">{userFilter}</span> · {label}{" "}
-            <span className="font-bold">{formatAmount(periodTotal)}</span>
-          </p>
-        )}
-
-        {tab === "browse" && !isLoading && hasActiveFilter && (
-          <p className="text-center text-base text-gray-500">
-            필터 적용 · {displayList.length}건 · {formatAmount(periodTotal)}
-          </p>
-        )}
-
-        {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-          </div>
-        ) : tab === "input" ? (
-          <ExpenseForm onSubmit={handleInsert} />
+        {tab === "settings" ? (
+          <SettingsPanel onSaved={showToast} />
         ) : (
           <>
-            <AnalyticsCalendar
-              mode={periodMode}
-              year={year}
-              month={month}
-              day={day}
-              expenses={filteredPeriod}
-              onModeChange={setPeriodMode}
-              onYearChange={setYear}
-              onMonthChange={setMonth}
-              onDaySelect={setDay}
-              onDayClick={handleDayClick}
-            />
-            <CategoryFilterBar
-              selected={categoryFilter}
-              onChange={setCategoryFilter}
-            />
-            <CategorySummary
-              expenses={periodBaseList}
-              title={`${label} 카테고리별`}
-              selectedCategory={categoryFilter}
-              onCategorySelect={setCategoryFilter}
-            />
-            <ExpenseCharts
-              expenses={displayList.length > 0 && hasActiveFilter ? displayList : periodBaseList}
-              timelineExpenses={filteredPeriod}
-              periodMode={periodMode}
-              year={year}
-              month={month}
-              periodLabel={label}
-            />
-            {showExpenseList && (
-              <ExpenseSearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                resultCount={searchQuery.trim() ? displayList.length : undefined}
+            {tab === "input" && (
+              <BudgetGauge
+                totalSpent={budgetTotal}
+                monthlyBudget={monthlyBudget}
               />
             )}
-            <ExportButtons expenses={displayList} label={label} />
-            {showExpenseList ? (
-              <ExpenseList
-                expenses={displayList}
-                onSelect={setSelectedExpense}
+
+            <UserFilterBar
+              users={users}
+              selected={userFilter}
+              onChange={setUserFilter}
+            />
+
+            {userFilter !== "전체" && tab === "input" && (
+              <p className="text-center text-lg text-gray-600">
+                <span className="font-bold text-blue-600">{userFilter}</span>{" "}
+                이번 달{" "}
+                <span className="font-bold">{formatAmount(budgetTotal)}</span>
+              </p>
+            )}
+
+            {userFilter !== "전체" && tab === "browse" && !isLoading && (
+              <p className="text-center text-lg text-gray-600">
+                <span className="font-bold text-blue-600">{userFilter}</span> ·{" "}
+                {label}{" "}
+                <span className="font-bold">{formatAmount(periodTotal)}</span>
+              </p>
+            )}
+
+            {tab === "browse" && !isLoading && hasActiveFilter && (
+              <p className="text-center text-base text-gray-500">
+                필터 적용 · {displayList.length}건 · {formatAmount(periodTotal)}
+              </p>
+            )}
+
+            {isLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+              </div>
+            ) : tab === "input" ? (
+              <ExpenseForm
+                storeId={storeId}
+                users={users}
+                onSubmit={handleInsert}
               />
             ) : (
-              <p className="rounded-2xl bg-blue-50 px-5 py-4 text-center text-lg text-blue-700">
-                월별 카드를 터치하면 해당 월의 상세 목록을 볼 수 있습니다
-              </p>
+              <>
+                <AnalyticsCalendar
+                  mode={periodMode}
+                  year={year}
+                  month={month}
+                  day={day}
+                  expenses={filteredPeriod}
+                  onModeChange={setPeriodMode}
+                  onYearChange={setYear}
+                  onMonthChange={setMonth}
+                  onDaySelect={setDay}
+                  onDayClick={handleDayClick}
+                />
+                <CategoryFilterBar
+                  selected={categoryFilter}
+                  onChange={setCategoryFilter}
+                />
+                <CategorySummary
+                  expenses={periodBaseList}
+                  title={`${label} 카테고리별`}
+                  selectedCategory={categoryFilter}
+                  onCategorySelect={setCategoryFilter}
+                />
+                <ExpenseCharts
+                  expenses={
+                    displayList.length > 0 && hasActiveFilter
+                      ? displayList
+                      : periodBaseList
+                  }
+                  timelineExpenses={filteredPeriod}
+                  periodMode={periodMode}
+                  year={year}
+                  month={month}
+                  periodLabel={label}
+                />
+                {showExpenseList && (
+                  <ExpenseSearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    resultCount={
+                      searchQuery.trim() ? displayList.length : undefined
+                    }
+                  />
+                )}
+                <ExportButtons expenses={displayList} label={label} />
+                {showExpenseList ? (
+                  <ExpenseList
+                    expenses={displayList}
+                    onSelect={setSelectedExpense}
+                  />
+                ) : (
+                  <p className="rounded-2xl bg-blue-50 px-5 py-4 text-center text-lg text-blue-700">
+                    월별 카드를 터치하면 해당 월의 상세 목록을 볼 수 있습니다
+                  </p>
+                )}
+              </>
             )}
           </>
         )}
@@ -335,6 +455,7 @@ export default function HomePage() {
       {selectedExpense && (
         <ExpenseModal
           expense={selectedExpense}
+          users={users}
           onClose={() => setSelectedExpense(null)}
           onUpdate={handleUpdate}
           onDelete={handleDelete}

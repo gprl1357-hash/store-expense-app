@@ -1,19 +1,23 @@
 "use client";
 
-import type { UserFilter } from "@/lib/constants";
-import { USERS } from "@/lib/constants";
+import type { User, UserFilter } from "@/lib/constants";
 
 type UserFilterBarProps = {
+  users: readonly User[];
   selected: UserFilter;
   onChange: (filter: UserFilter) => void;
 };
 
-const FILTERS: UserFilter[] = ["전체", ...USERS];
+export function UserFilterBar({
+  users,
+  selected,
+  onChange,
+}: UserFilterBarProps) {
+  const filters: UserFilter[] = ["전체", ...users];
 
-export function UserFilterBar({ selected, onChange }: UserFilterBarProps) {
   return (
     <div className="flex gap-3 overflow-x-auto pb-1">
-      {FILTERS.map((filter) => {
+      {filters.map((filter) => {
         const isActive = selected === filter;
         return (
           <button

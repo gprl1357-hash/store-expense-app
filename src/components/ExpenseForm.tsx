@@ -1,24 +1,26 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Camera, Loader2, Plus, X } from "lucide-react";
 import {
   AMOUNT_SHORTCUTS,
   CATEGORIES,
-  USERS,
   addDaysToDateString,
   formatDate,
   todayString,
   type Category,
+  type StoreId,
   type User,
 } from "@/lib/constants";
 import type { ExpenseInsert } from "@/lib/supabase/types";
 
 type ExpenseFormProps = {
+  storeId: StoreId;
+  users: readonly User[];
   onSubmit: (input: ExpenseInsert, photo?: File | null) => Promise<void>;
 };
 
-export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
+export function ExpenseForm({ storeId, users, onSubmit }: ExpenseFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [category, setCategory] = useState<Category | null>(null);
   const [amount, setAmount] = useState(0);
@@ -30,6 +32,10 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [date, setDate] = useState(todayString);
+
+  useEffect(() => {
+    setCreatedBy((prev) => (prev && users.includes(prev) ? prev : null));
+  }, [users, storeId]);
 
   const today = todayString();
   const isToday = date === today;
@@ -100,6 +106,7 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
     try {
       await onSubmit(
         {
+          store_id: storeId,
           date,
           category,
           amount,
@@ -169,8 +176,12 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
         <label className="mb-3 block text-xl font-bold text-gray-800">
           작성자
         </label>
-        <div className="grid grid-cols-3 gap-3">
-          {USERS.map((user) => (
+        <div
+          className={`grid gap-3 ${
+            users.length <= 2 ? "grid-cols-2" : "grid-cols-3"
+          }`}
+        >
+          {users.map((user) => (
             <button
               key={user}
               type="button"
@@ -192,19 +203,19 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
         <label className="mb-3 block text-xl font-bold text-gray-800">
           카테고리
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.value}
               type="button"
               onClick={() => setCategory(cat.value)}
-              className={`flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl text-xl font-bold transition-all ${
+              className={`flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-2xl text-lg font-bold transition-all sm:min-h-24 sm:text-xl ${
                 category === cat.value
                   ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-700"
                   : "bg-white text-gray-900 ring-2 ring-gray-200"
               }`}
             >
-              <span className="text-4xl">{cat.emoji}</span>
+              <span className="text-3xl sm:text-4xl">{cat.emoji}</span>
               <span>{cat.label}</span>
             </button>
           ))}

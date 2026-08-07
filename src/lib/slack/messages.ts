@@ -1,4 +1,9 @@
-import { APP_TITLE, formatAmount, formatDateTime24KST } from "../constants";
+import {
+  APP_TITLE,
+  formatAmount,
+  formatDateTime24KST,
+  getStoreTitle,
+} from "../constants";
 import type { Expense } from "../supabase/types";
 
 export function formatExpenseNotifyMessage(expense: Expense): string {
@@ -9,12 +14,14 @@ export function formatExpenseNotifyMessage(expense: Expense): string {
     expense.date !== registeredAt.slice(0, 10)
       ? ` | 지출일: ${expense.date}`
       : "";
+  const storeTitle = getStoreTitle(expense.store_id);
   const lines = [
     `*[지출 등록]* ${registeredAt} · ${expense.category} · ${formatAmount(expense.amount)}`,
+    `매장: ${storeTitle}`,
     `작성자: ${expense.created_by}${expenseDateNote} | 메모: ${memo}`,
   ];
   if (photo) lines.push(photo);
-  lines.push(`_${APP_TITLE}_`);
+  lines.push(`_${storeTitle}_`);
   return lines.join("\n");
 }
 
@@ -35,6 +42,6 @@ export function formatDailyBackupMessage(stats: {
     `• 전체 활성: ${stats.activeCount}건 | 휴지통: ${stats.deletedCount}건`,
     `• Storage: \`${stats.storagePath}\``,
     `_복원: npm run backup:restore -- <파일경로> [--dry-run]_`,
-    `_${APP_TITLE}_`,
+    `_다매장 데이터 포함 · ${APP_TITLE}_`,
   ].join("\n");
 }

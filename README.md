@@ -1,6 +1,6 @@
 # 매장 지출 관리 웹앱
 
-60대 이상 어르신을 포함한 3명이 모바일에서 함께 사용하는 매장 지출 관리 PWA입니다.
+제주은희네해장국 **광명GIDC점 · 인천가정점** 지출을 모바일에서 함께 기록하는 PWA입니다.
 
 | 항목 | 링크 |
 |------|------|
@@ -11,6 +11,7 @@
 | **운영 관리** | [docs/OPS_MANAGEMENT.md](docs/OPS_MANAGEMENT.md) |
 | **기여·배포** | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
 | **Slack·백업** | [docs/SLACK_SETUP.md](docs/SLACK_SETUP.md) |
+| **v2 스테이징 (인증 개발)** | [docs/V2_STAGING_SETUP.md](docs/V2_STAGING_SETUP.md) |
 
 ---
 
@@ -57,7 +58,7 @@ npm run dev                        # http://localhost:3000
 |------|------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon public key |
-| `NEXT_PUBLIC_MONTHLY_BUDGET` | 월 예산 (원, 기본 10,000,000) |
+| ~~`NEXT_PUBLIC_MONTHLY_BUDGET`~~ | **미사용** — 월 예산은 앱 **설정** 탭에서 매장별로 변경 (`stores.monthly_budget`) |
 
 ### 서버 전용 (`NEXT_PUBLIC_` 금지 · Git 커밋 금지)
 
@@ -89,6 +90,20 @@ npm run dev                        # http://localhost:3000
 | `003_expense_photos.sql` | `photo_url` + `expense-photos` 버킷 |
 | `004_expense_backups.sql` | `expense-backups` 버킷 (일일 JSON 백업) |
 | `005_slack_webhook_trigger.sql` | pg_net Webhook 대안 (선택) |
+| `006_stores_and_card.sql` | **다매장 `store_id` · 카드 카테고리 · `stores` 예산** |
+| `007_store_id_default_rollback.sql` | `store_id` 기본값 (긴급 코드 롤백 호환) |
+
+> **배포 전 필수:** 운영 DB에 `006` → `007` 실행 후 코드 배포. 기존 지출은 **광명GIDC점**으로 매핑됩니다.  
+> **긴급 롤백:** [docs/ROLLBACK.md](docs/ROLLBACK.md) (`v1.3.1` Instant Rollback)
+
+### 매장 · 카테고리
+
+| 매장 | 작성자 | 월 예산 |
+|------|--------|---------|
+| 광명GIDC점 | 홍혜기, 홍성미, 손선애 | 설정 탭 (기본 1,000만) |
+| 인천가정점 | 홍성미, 신계승 | 설정 탭 (기본 1,000만) |
+
+카테고리: 식자재 · 공과금 · 인건비 · **카드** · 기타
 
 ---
 
@@ -96,8 +111,8 @@ npm run dev                        # http://localhost:3000
 
 | 기능 | 동작 |
 |------|------|
-| **지출 등록 알림** | Supabase Webhook → Slack `[지출 등록]` (KST `YYYY-MM-DD HH:mm:ss`) |
-| **일일 백업** | 매일 23:00 KST — 전체 지출 JSON → Supabase Storage + Slack 파일 |
+| **지출 등록 알림** | Supabase Webhook → Slack `[지출 등록]` (KST · **매장명 표시**) |
+| **일일 백업** | 매일 23:00 KST — 전체 지출 JSON(다매장 포함) → Storage + Slack |
 | **복원** | Slack에서 JSON 다운로드 → `npm run backup:restore` |
 
 ```
@@ -151,7 +166,7 @@ src/
     ├── backup/export.ts
     ├── slack/                      # client, messages, webhook-auth
     └── supabase/
-supabase/migrations/                # 001 ~ 005
+supabase/migrations/                # 001 ~ 006
 scripts/
 ├── setup-supabase-slack-webhook.sh
 ├── sync-vercel-slack-env.sh

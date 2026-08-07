@@ -1,23 +1,70 @@
-export const APP_TITLE = "제주은희네해장국광명GIDC 매장 지출 관리";
+export const APP_TITLE = "제주은희네해장국 매장 지출 관리";
 export const APP_TITLE_SHORT = "은희네 지출관리";
+
+export const STORE_IDS = ["gwangmyeong-gidc", "incheon-gajeong"] as const;
+export type StoreId = (typeof STORE_IDS)[number];
+
+export const ALL_USERS = ["홍혜기", "홍성미", "손선애", "신계승"] as const;
+export type User = (typeof ALL_USERS)[number];
+
+export type StoreConfig = {
+  id: StoreId;
+  shortName: string;
+  title: string;
+  users: readonly User[];
+  defaultBudget: number;
+};
+
+export const STORES: readonly StoreConfig[] = [
+  {
+    id: "gwangmyeong-gidc",
+    shortName: "광명GIDC점",
+    title: "제주은희네해장국 광명GIDC · 지출관리",
+    users: ["홍혜기", "홍성미", "손선애"],
+    defaultBudget: 10_000_000,
+  },
+  {
+    id: "incheon-gajeong",
+    shortName: "인천가정점",
+    title: "제주은희네해장국 인천가정 · 지출관리",
+    users: ["홍성미", "신계승"],
+    defaultBudget: 10_000_000,
+  },
+] as const;
+
+export const DEFAULT_STORE_ID: StoreId = "gwangmyeong-gidc";
+
+export function getStoreConfig(id: StoreId): StoreConfig {
+  const store = STORES.find((s) => s.id === id);
+  if (!store) return STORES[0];
+  return store;
+}
+
+export function getStoreTitle(id: string | null | undefined): string {
+  if (!id) return APP_TITLE;
+  const store = STORES.find((s) => s.id === id);
+  return store?.title ?? APP_TITLE;
+}
+
+export function getStoreShortName(id: string | null | undefined): string {
+  if (!id) return "매장";
+  const store = STORES.find((s) => s.id === id);
+  return store?.shortName ?? "매장";
+}
 
 export const CATEGORIES = [
   { value: "식자재", label: "식자재", emoji: "🥬" },
   { value: "공과금", label: "공과금", emoji: "⚡" },
   { value: "인건비", label: "인건비", emoji: "👤" },
+  { value: "카드", label: "카드", emoji: "💳" },
   { value: "기타", label: "기타", emoji: "📦" },
 ] as const;
 
-export const USERS = ["홍혜기", "홍성미", "손선애"] as const;
-
 export type Category = (typeof CATEGORIES)[number]["value"];
-export type User = (typeof USERS)[number];
 export type UserFilter = "전체" | User;
 export type CategoryFilter = "전체" | Category;
 
-export const MONTHLY_BUDGET = Number(
-  process.env.NEXT_PUBLIC_MONTHLY_BUDGET ?? 10_000_000
-);
+export const STORE_STORAGE_KEY = "store-expense-selected-store";
 
 export const AMOUNT_SHORTCUTS = [
   { label: "+1천", value: 1_000 },

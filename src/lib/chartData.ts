@@ -5,6 +5,7 @@ export const CATEGORY_COLORS: Record<Category, string> = {
   식자재: "#22c55e",
   공과금: "#eab308",
   인건비: "#3b82f6",
+  카드: "#0ea5e9",
   기타: "#94a3b8",
 };
 

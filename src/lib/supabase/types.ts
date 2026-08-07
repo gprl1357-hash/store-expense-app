@@ -1,7 +1,8 @@
-import type { Category, User } from "../constants";
+import type { Category, StoreId, User } from "../constants";
 
 export type Expense = {
   id: string;
+  store_id: StoreId;
   date: string;
   category: Category;
   amount: number;
@@ -13,6 +14,7 @@ export type Expense = {
 };
 
 export type ExpenseInsert = {
+  store_id: StoreId;
   date?: string;
   category: Category;
   amount: number;
@@ -22,11 +24,15 @@ export type ExpenseInsert = {
 };
 
 export type ExpenseUpdate = Partial<
-  Pick<Expense, "date" | "category" | "amount" | "memo" | "created_by" | "photo_url">
+  Pick<
+    Expense,
+    "date" | "category" | "amount" | "memo" | "created_by" | "photo_url"
+  >
 >;
 
 type ExpenseRow = {
   id: string;
+  store_id?: string | null;
   date: string;
   category: string;
   amount: number;
@@ -44,6 +50,7 @@ export type Database = {
         Row: ExpenseRow;
         Insert: {
           id?: string;
+          store_id: string;
           date?: string;
           category: string;
           amount: number;
@@ -55,6 +62,7 @@ export type Database = {
         };
         Update: {
           id?: string;
+          store_id?: string;
           date?: string;
           category?: string;
           amount?: number;
@@ -63,6 +71,27 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           photo_url?: string | null;
+        };
+        Relationships: [];
+      };
+      stores: {
+        Row: {
+          id: string;
+          name: string;
+          monthly_budget: number;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          monthly_budget?: number;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          monthly_budget?: number;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -78,6 +107,7 @@ export type Database = {
 export function parseExpense(row: ExpenseRow): Expense {
   return {
     id: row.id,
+    store_id: (row.store_id ?? "gwangmyeong-gidc") as StoreId,
     date: row.date,
     category: row.category as Category,
     amount: Number(row.amount),

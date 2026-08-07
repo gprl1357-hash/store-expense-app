@@ -43,7 +43,7 @@ export function CategorySummary({
         <p className="mb-3 text-sm text-gray-500">카드를 터치하면 해당 카테고리만 볼 수 있습니다</p>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {totals.map(({ value, label, emoji, total }) => {
           const ratio = grandTotal > 0 ? total / grandTotal : 0;
           const isSelected = selectedCategory === value;

@@ -1,10 +1,11 @@
 import { getSupabase } from "./client";
 import type { Expense, ExpenseInsert, ExpenseUpdate } from "./types";
 import { parseExpense } from "./types";
-import { currentMonthRange } from "../constants";
+import { currentMonthRange, type StoreId } from "../constants";
 
-/** 기간별 활성 지출 목록 조회 */
+/** 기간별 활성 지출 목록 조회 (매장 필터) */
 export async function fetchExpensesInRange(
+  storeId: StoreId,
   start: string,
   end: string
 ): Promise<Expense[]> {
@@ -13,6 +14,7 @@ export async function fetchExpensesInRange(
   const { data, error } = await supabase
     .from("expenses")
     .select("*")
+    .eq("store_id", storeId)
     .is("deleted_at", null)
     .gte("date", start)
     .lte("date", end)
@@ -24,13 +26,17 @@ export async function fetchExpensesInRange(
 }
 
 /** 이번 달 활성 지출 목록 조회 */
-export async function fetchMonthlyExpenses(): Promise<Expense[]> {
+export async function fetchMonthlyExpenses(
+  storeId: StoreId
+): Promise<Expense[]> {
   const { start, end } = currentMonthRange();
-  return fetchExpensesInRange(start, end);
+  return fetchExpensesInRange(storeId, start, end);
 }
 
-/** 휴지통(삭제된) 지출 목록 — 최근 90일 이내 */
-export async function fetchDeletedExpenses(): Promise<Expense[]> {
+/** 휴지통(삭제된) 지출 목록 — 최근 90일 이내, 매장 필터 */
+export async function fetchDeletedExpenses(
+  storeId: StoreId
+): Promise<Expense[]> {
   const supabase = getSupabase();
   const since = new Date();
   since.setDate(since.getDate() - 90);
@@ -38,6 +44,7 @@ export async function fetchDeletedExpenses(): Promise<Expense[]> {
   const { data, error } = await supabase
     .from("expenses")
     .select("*")
+    .eq("store_id", storeId)
     .not("deleted_at", "is", null)
     .gte("deleted_at", since.toISOString())
     .order("deleted_at", { ascending: false });
@@ -108,15 +115,23 @@ export async function restoreExpense(id: string): Promise<Expense> {
   return parseExpense(data);
 }
 
-/** Realtime 구독 설정 */
-export function subscribeExpenses(onChange: () => void) {
+/** Realtime 구독 설정 (매장별 필터) */
+export function subscribeExpenses(
+  storeId: StoreId,
+  onChange: () => void
+) {
   const supabase = getSupabase();
 
   const channel = supabase
-    .channel("expenses-changes")
+    .channel(`expenses-changes-${storeId}`)
     .on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "expenses" },
+      {
+        event: "*",
+        schema: "public",
+        table: "expenses",
+        filter: `store_id=eq.${storeId}`,
+      },
       () => onChange()
     )
     .subscribe();

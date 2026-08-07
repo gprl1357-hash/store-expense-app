@@ -43,6 +43,10 @@ function parseExpensePayload(raw: unknown): Expense | null {
 
   return parseExpense({
     id: row.id,
+    store_id:
+      typeof row.store_id === "string" && row.store_id
+        ? row.store_id
+        : "gwangmyeong-gidc",
     date,
     category,
     amount: Number(amountRaw ?? 0),
