@@ -76,4 +76,13 @@ CRON_SECRET=<dev용 임의 문자열>
 
 ---
 
+## 4. 검증 완료 (2026-09-22)
+
+`dev` 브랜치 push → Vercel Preview 배포(`store-expense-app-5tty-git-dev-hyeki-hongs-projects.vercel.app`)가
+dev Supabase(`hdcasqrcjzxcjznbmfbb`)로 정상 연동되어 앱이 뜨는 것을 확인했습니다
+(광명GIDC점/인천가정점 전환·예산 게이지 정상). Vercel Authentication(Deployment Protection)은
+계속 ON 상태로 유지합니다.
+
+---
+
 *작성: 2026-09-22*
