@@ -76,7 +76,24 @@ CRON_SECRET=<dev용 임의 문자열>
 
 ---
 
-## 4. 검증 완료 (2026-09-22)
+## 4. Vercel 환경변수 실제 이름 (2026-09-22)
+
+Vercel 대시보드가 **같은 이름을 Production/Preview로 나눠 여러 행으로 등록하는 것을 허용하지 않아**
+(변수명당 하나의 항목만 가능, 대신 "Add Different Value for Production" 방식만 지원),
+Preview용 값이 아래처럼 **다른 이름**으로 등록되어 있습니다. 앱 코드는 `next.config.ts`의 `env` 설정과
+`src/lib/supabase/admin.ts`의 fallback 체인으로 이 이름들을 표준 이름에 매핑합니다 — **Vercel 쪽은
+더 건드릴 필요 없습니다.**
+
+| 표준 이름 (앱이 참조) | Production 값이 담긴 실제 변수명 | Preview 값이 담긴 실제 변수명 |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `NEXT_PUBLIC_SUPABASE_URL` (정상) | `NEXT_PREVIEW_SUPABASE_URL` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `NEXT_PUBLIC_SUPABASE_ANON_KEY` (정상) | `NEXT_PREVIEW_SUPABASE_ANON_KEY` |
+| `SUPABASE_SERVICE_ROLE_KEY` | `SUPABASE_PUBLIC_SERVICE_ROLE_KEY` | `SUPABASE_PREVIEW_SERVICE_ROLE_KEY` |
+
+향후 이 변수들을 Vercel에서 다시 손볼 때는 이 매핑을 참고하세요. `next.config.ts`/`admin.ts`의
+fallback 로직도 함께 갱신해야 합니다.
+
+## 5. 검증 완료 (2026-09-22)
 
 `dev` 브랜치 push → Vercel Preview 배포(`store-expense-app-5tty-git-dev-hyeki-hongs-projects.vercel.app`)가
 dev Supabase(`hdcasqrcjzxcjznbmfbb`)로 정상 연동되어 앱이 뜨는 것을 확인했습니다

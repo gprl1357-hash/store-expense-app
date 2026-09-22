@@ -42,7 +42,19 @@ const allowedDevOrigins = [
   ]),
 ];
 
+// Vercel Preview 환경변수가 대시보드의 이름 중복 제한 때문에
+// NEXT_PUBLIC_SUPABASE_URL 대신 NEXT_PREVIEW_SUPABASE_URL 로 등록되어 있음
+// (Production은 표준 이름 그대로). 빌드 시점에 표준 이름으로 병합해
+// client.ts/admin.ts 등 앱 코드는 항상 NEXT_PUBLIC_SUPABASE_* 만 참조하면 됨.
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL:
+      process.env.NEXT_PUBLIC_SUPABASE_URL ??
+      process.env.NEXT_PREVIEW_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+      process.env.NEXT_PREVIEW_SUPABASE_ANON_KEY,
+  },
   allowedDevOrigins,
   turbopack: {
     root: path.join(__dirname),
