@@ -32,13 +32,15 @@
 
 ---
 
-## 3. 설정 후 워크플로
+## 3. 설정 후 워크플로 (2026-09-22~ dev/main 분리)
 
 ```
-feature/* → PR → CI Build 통과 → Preview 확인 → Merge → Vercel Production
+feature/* → dev로 PR/머지 (Preview = dev Supabase)
+dev → main으로 PR (2차 검토 + 사용자 최종 승인 후에만) → CI Build 통과 → Merge → Vercel Production
 ```
 
-**직접 `main` push**는 보호 규칙 때문에 거부됩니다. (관리자 bypass 제외)
+**직접 `main` push**는 보호 규칙 때문에 거부됩니다. (관리자 bypass 제외)  
+상세: [`DEV_ENVIRONMENT.md`](DEV_ENVIRONMENT.md)
 
 ---
 
