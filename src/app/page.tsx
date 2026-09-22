@@ -30,6 +30,8 @@ import {
 } from "@/lib/constants";
 import { filterByCategory, filterBySearch } from "@/lib/filterExpenses";
 import { useStore } from "@/lib/store-context";
+import { useAuth } from "@/lib/auth/auth-context";
+import { StoreLoginModal } from "@/components/StoreLoginModal";
 import {
   deleteExpense,
   fetchDeletedExpenses,
@@ -37,13 +39,14 @@ import {
   fetchMonthlyExpenses,
   insertExpense,
   restoreExpense,
-  subscribeExpenses,
   updateExpense,
 } from "@/lib/supabase/expenses";
 import { resizeImageFile, uploadExpensePhoto } from "@/lib/supabase/storage";
-import type { Expense } from "@/lib/supabase/types";
+import type { Expense, ExpenseUpdate } from "@/lib/supabase/types";
 import { sendSlackExpenseNotify } from "@/lib/slack/trigger-notify";
 import { Loader2, RotateCcw } from "lucide-react";
+
+const POLL_INTERVAL_MS = 20_000;
 
 function parseToday() {
   const [y, m, d] = todayString().split("-").map(Number);
@@ -69,6 +72,8 @@ export default function HomePage() {
     monthlyBudget,
     setStoreId,
   } = useStore();
+  const { authenticatedStoreIds, loadingStatus } = useAuth();
+  const isAuthed = authenticatedStoreIds.has(storeId);
 
   const today = parseToday();
   const [tab, setTab] = useState<Tab>("input");
@@ -127,6 +132,7 @@ export default function HomePage() {
   }, [storeId]);
 
   useEffect(() => {
+    if (!isAuthed) return;
     let cancelled = false;
 
     (async () => {
@@ -140,20 +146,25 @@ export default function HomePage() {
       }
     })();
 
-    const unsubscribe = subscribeExpenses(storeId, () => {
-      if (cancelled) return;
-      loadBudgetExpenses();
-      if (tab === "browse") loadPeriodExpenses();
-    });
-
     return () => {
       cancelled = true;
-      unsubscribe();
     };
-  }, [loadBudgetExpenses, loadPeriodExpenses, tab, storeId]);
+  }, [storeId, isAuthed]);
+
+  // 실시간 대신 주기 폴링 — 서버(API Route)가 접근 통제를 하므로
+  // 브라우저가 Supabase에 직접 연결하지 않습니다 (OWASP A01 대응).
+  useEffect(() => {
+    if (!isAuthed) return;
+    const interval = setInterval(() => {
+      loadBudgetExpenses();
+      if (tab === "browse") loadPeriodExpenses();
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [loadBudgetExpenses, loadPeriodExpenses, tab, isAuthed]);
 
   useEffect(() => {
-    if (tab !== "browse") return;
+    if (!isAuthed || tab !== "browse") return;
     let cancelled = false;
 
     (async () => {
@@ -173,7 +184,7 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [tab, storeId, periodMode, year, month]);
+  }, [tab, storeId, periodMode, year, month, isAuthed]);
 
   useEffect(() => {
     if (userFilter !== "전체" && !users.includes(userFilter)) {
@@ -249,7 +260,10 @@ export default function HomePage() {
       try {
         const resized = await resizeImageFile(photo);
         const photoUrl = await uploadExpensePhoto(expense.id, resized);
-        finalExpense = await updateExpense(expense.id, { photo_url: photoUrl });
+        finalExpense = await updateExpense(expense.id, {
+          store_id: storeId,
+          photo_url: photoUrl,
+        });
       } catch (err) {
         console.error(err);
         await sendSlackExpenseNotify(finalExpense);
@@ -268,18 +282,15 @@ export default function HomePage() {
     loadPeriodExpenses();
   }
 
-  async function handleUpdate(
-    id: string,
-    input: Parameters<typeof updateExpense>[1]
-  ) {
-    await updateExpense(id, input);
+  async function handleUpdate(id: string, input: ExpenseUpdate) {
+    await updateExpense(id, { ...input, store_id: storeId });
     showToast("수정되었습니다 ✓");
     loadBudgetExpenses();
     loadPeriodExpenses();
   }
 
   async function handleDelete(id: string) {
-    await deleteExpense(id);
+    await deleteExpense(id, storeId);
     showToast("휴지통으로 이동했습니다 (복원 가능)");
     setSelectedDayDate(null);
     loadBudgetExpenses();
@@ -287,7 +298,7 @@ export default function HomePage() {
   }
 
   async function handleRestore(id: string) {
-    await restoreExpense(id);
+    await restoreExpense(id, storeId);
     showToast("복원되었습니다 ✓");
     loadBudgetExpenses();
     loadPeriodExpenses();
@@ -338,6 +349,16 @@ export default function HomePage() {
         </div>
       </header>
 
+      {loadingStatus ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+        </div>
+      ) : !isAuthed ? (
+        <main className="px-5 pt-10">
+          <StoreLoginModal store={store} />
+        </main>
+      ) : (
+        <>
       <main className="space-y-5 px-5">
         {tab === "settings" ? (
           <SettingsPanel onSaved={showToast} />
@@ -480,6 +501,8 @@ export default function HomePage() {
           onRestore={handleRestore}
           fetchDeleted={loadDeleted}
         />
+      )}
+        </>
       )}
 
       {toast && (

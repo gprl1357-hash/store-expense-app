@@ -80,18 +80,57 @@ export type Database = {
           name: string;
           monthly_budget: number;
           updated_at: string;
+          login_id: string;
+          password_hash: string;
+          must_change_password: boolean;
+          password_version: number;
         };
         Insert: {
           id: string;
           name: string;
           monthly_budget?: number;
           updated_at?: string;
+          login_id: string;
+          password_hash: string;
+          must_change_password?: boolean;
+          password_version?: number;
         };
         Update: {
           id?: string;
           name?: string;
           monthly_budget?: number;
           updated_at?: string;
+          login_id?: string;
+          password_hash?: string;
+          must_change_password?: boolean;
+          password_version?: number;
+        };
+        Relationships: [];
+      };
+      store_sessions: {
+        Row: {
+          id: string;
+          store_id: string;
+          token_hash: string;
+          password_version: number;
+          created_at: string;
+          last_used_at: string;
+        };
+        Insert: {
+          id?: string;
+          store_id: string;
+          token_hash: string;
+          password_version: number;
+          created_at?: string;
+          last_used_at?: string;
+        };
+        Update: {
+          id?: string;
+          store_id?: string;
+          token_hash?: string;
+          password_version?: number;
+          created_at?: string;
+          last_used_at?: string;
         };
         Relationships: [];
       };

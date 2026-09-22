@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import { APP_TITLE, APP_TITLE_SHORT } from "@/lib/constants";
 import { StoreProvider } from "@/lib/store-context";
+import { AuthProvider } from "@/lib/auth/auth-context";
 import "./globals.css";
 
 const notoSansKr = Noto_Sans_KR({
@@ -38,7 +39,9 @@ export default function RootLayout({
   return (
     <html lang="ko" className={`${notoSansKr.variable} h-full`}>
       <body className="min-h-full bg-gray-50 font-sans text-xl antialiased">
-        <StoreProvider>{children}</StoreProvider>
+        <AuthProvider>
+          <StoreProvider>{children}</StoreProvider>
+        </AuthProvider>
       </body>
     </html>
   );

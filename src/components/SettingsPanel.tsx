@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { formatAmount } from "@/lib/constants";
 import { useStore } from "@/lib/store-context";
+import { ChangePasswordSection } from "./ChangePasswordSection";
 
 type SettingsPanelProps = {
   onSaved?: (message: string) => void;
 };
 
 export function SettingsPanel({ onSaved }: SettingsPanelProps) {
-  const { store, users, monthlyBudget, budgetLoading, saveBudget } = useStore();
+  const { storeId, store, users, monthlyBudget, budgetLoading, saveBudget } =
+    useStore();
   const [input, setInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -94,6 +96,8 @@ export function SettingsPanel({ onSaved }: SettingsPanelProps) {
           </>
         )}
       </section>
+
+      <ChangePasswordSection storeId={storeId} onSaved={onSaved} />
 
       <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
         <p className="mb-3 text-xl font-bold text-gray-900">작성자</p>

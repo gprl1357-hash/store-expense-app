@@ -9,6 +9,7 @@ export type User = (typeof ALL_USERS)[number];
 
 export type StoreConfig = {
   id: StoreId;
+  loginId: string;
   shortName: string;
   title: string;
   users: readonly User[];
@@ -18,6 +19,7 @@ export type StoreConfig = {
 export const STORES: readonly StoreConfig[] = [
   {
     id: "gwangmyeong-gidc",
+    loginId: "6010",
     shortName: "광명GIDC점",
     title: "제주은희네해장국 광명GIDC · 지출관리",
     users: ["홍혜기", "홍성미", "손선애"],
@@ -25,6 +27,7 @@ export const STORES: readonly StoreConfig[] = [
   },
   {
     id: "incheon-gajeong",
+    loginId: "9167",
     shortName: "인천가정점",
     title: "제주은희네해장국 인천가정 · 지출관리",
     users: ["홍성미", "신계승"],
