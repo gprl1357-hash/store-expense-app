@@ -33,7 +33,7 @@ GitHub (단일 저장소, store-expense-app)
 | 3 | `package-lock.json` 동기화 수정 (`npm ci` 실패 원인) | Claude | ✅ 완료 |
 | 4 | Supabase **dev 프로젝트** 생성 (`hdcasqrcjzxcjznbmfbb`) | 사용자 | ✅ 완료 |
 | 5 | dev 프로젝트에 `supabase/schema.sql` + `migrations/001~004,006,007` 실행 (005는 Dashboard Webhook 대안이라 제외) | 사용자 (SQL Editor, Claude는 이 세션 네트워크 정책상 Supabase 직접 연결 불가) | ✅ 완료 |
-| 6 | Vercel 프로젝트 → Settings → Environment Variables에서 **Preview** 스코프에 dev Supabase 키 등록 | 사용자 (Vercel 대시보드 접근 필요) | ⬜ 대기 |
+| 6 | Vercel 프로젝트 → Settings → Environment Variables에서 **Preview** 스코프에 dev Supabase 키 등록 | 사용자 (Vercel 대시보드 접근 필요) | ✅ 완료 |
 | 7 | `main` 브랜치 보호 규칙 (`dev → main` PR 필수, CI 통과 필수) | 사용자 (repo admin 설정) | ✅ 완료 |
 
 ### 4번 — Supabase dev 프로젝트 생성
