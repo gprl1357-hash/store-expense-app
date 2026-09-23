@@ -5,11 +5,12 @@ import type { Database } from "./types";
 export function createSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   // Vercel 대시보드 이름 중복 제한으로 SUPABASE_SERVICE_ROLE_KEY 대신
-  // Production=SUPABASE_PUBLIC_SERVICE_ROLE_KEY, Preview=SUPABASE_PREVIEW_SERVICE_ROLE_KEY 로 등록됨
-  const serviceKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    process.env.SUPABASE_PUBLIC_SERVICE_ROLE_KEY ??
-    process.env.SUPABASE_PREVIEW_SERVICE_ROLE_KEY;
+  // Production=SUPABASE_PUBLIC_SERVICE_ROLE_KEY, Preview=SUPABASE_PREVIEW_SERVICE_ROLE_KEY 로 등록됨.
+  // VERCEL_ENV로 명시 분기해 Preview/Development가 실수로 운영 키를 집지 않도록 한다.
+  const isVercelProduction = process.env.VERCEL_ENV === "production";
+  const serviceKey = isVercelProduction
+    ? process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_PUBLIC_SERVICE_ROLE_KEY
+    : process.env.SUPABASE_PREVIEW_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const key = serviceKey ?? anonKey;
 

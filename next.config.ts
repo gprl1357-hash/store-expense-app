@@ -43,17 +43,21 @@ const allowedDevOrigins = [
 ];
 
 // Vercel Preview 환경변수가 대시보드의 이름 중복 제한 때문에
-// NEXT_PUBLIC_SUPABASE_URL 대신 NEXT_PREVIEW_SUPABASE_URL 로 등록되어 있음
-// (Production은 표준 이름 그대로). 빌드 시점에 표준 이름으로 병합해
-// client.ts/admin.ts 등 앱 코드는 항상 NEXT_PUBLIC_SUPABASE_* 만 참조하면 됨.
+// NEXT_PUBLIC_SUPABASE_URL 대신 NEXT_PREVIEW_SUPABASE_URL 로 등록되어 있음.
+// 대시보드에서 NEXT_PUBLIC_SUPABASE_URL 자체가 실수로 "Production and Preview"
+// 공통 값(운영 URL)으로 남아있는 경우까지 대비해, Vercel이 자동 주입하는
+// VERCEL_ENV로 명시적으로 분기한다 — Preview/Development는 무조건 dev 값을
+// 우선 사용하고, 운영 빌드(VERCEL_ENV==='production')만 표준 이름을 그대로 쓴다.
+const isVercelProduction = process.env.VERCEL_ENV === "production";
+
 const nextConfig: NextConfig = {
   env: {
-    NEXT_PUBLIC_SUPABASE_URL:
-      process.env.NEXT_PUBLIC_SUPABASE_URL ??
-      process.env.NEXT_PREVIEW_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY:
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-      process.env.NEXT_PREVIEW_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: isVercelProduction
+      ? process.env.NEXT_PUBLIC_SUPABASE_URL
+      : process.env.NEXT_PREVIEW_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: isVercelProduction
+      ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      : process.env.NEXT_PREVIEW_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
   allowedDevOrigins,
   turbopack: {
