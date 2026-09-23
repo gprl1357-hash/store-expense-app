@@ -59,8 +59,8 @@ export function StoreLoginModal({ store, onResolvedStore, onCancel }: StoreLogin
       } else {
         onResolvedStore?.(activeStore.id);
       }
-    } catch {
-      setError(GENERIC_LOGIN_ERROR);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : GENERIC_LOGIN_ERROR);
     } finally {
       setLoading(false);
     }
