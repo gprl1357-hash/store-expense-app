@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, LogOut } from "lucide-react";
 import { formatAmount } from "@/lib/constants";
 import { useStore } from "@/lib/store-context";
+import { useAuth } from "@/lib/auth/auth-context";
 import { ChangePasswordSection } from "./ChangePasswordSection";
 
 type SettingsPanelProps = {
@@ -13,9 +14,20 @@ type SettingsPanelProps = {
 export function SettingsPanel({ onSaved }: SettingsPanelProps) {
   const { storeId, store, users, monthlyBudget, budgetLoading, saveBudget } =
     useStore();
+  const { logout } = useAuth();
   const [input, setInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await logout(storeId);
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   useEffect(() => {
     setInput(monthlyBudget > 0 ? monthlyBudget.toLocaleString("ko-KR") : "");
@@ -51,7 +63,9 @@ export function SettingsPanel({ onSaved }: SettingsPanelProps) {
       <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
         <p className="text-lg text-gray-600">현재 매장</p>
         <p className="mt-1 text-2xl font-bold text-gray-900">{store.shortName}</p>
-        <p className="mt-2 text-base text-gray-500">{store.title}</p>
+        <p className="mt-2 text-base text-gray-500">
+          매장 ID: {store.loginId} · {store.title}
+        </p>
       </section>
 
       <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
@@ -114,6 +128,28 @@ export function SettingsPanel({ onSaved }: SettingsPanelProps) {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+        <p className="mb-3 text-xl font-bold text-gray-900">{store.shortName} 로그아웃</p>
+        <p className="mb-4 text-base text-gray-500">
+          이 매장의 간편 로그인이 해제됩니다. 다음에 이 매장으로 전환하려면 비밀번호를 다시 입력해야 합니다.
+        </p>
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl bg-white text-xl font-bold text-red-600 ring-2 ring-red-200 active:bg-red-50 disabled:opacity-60"
+        >
+          {loggingOut ? (
+            <Loader2 className="h-6 w-6 animate-spin" />
+          ) : (
+            <>
+              <LogOut className="h-5 w-5" />
+              로그아웃
+            </>
+          )}
+        </button>
       </section>
     </div>
   );

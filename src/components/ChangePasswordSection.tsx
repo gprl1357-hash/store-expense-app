@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { validatePasswordRules } from "@/lib/auth/password-rules";
 import type { StoreId } from "@/lib/constants";
+import { PasswordInput } from "./PasswordInput";
 
 type ChangePasswordSectionProps = {
   storeId: StoreId;
@@ -58,29 +59,24 @@ export function ChangePasswordSection({
         8자 이상, 영문·숫자·특수문자 중 2종류 이상 포함해야 합니다.
       </p>
       <div className="space-y-3">
-        <input
-          type="password"
-          autoComplete="current-password"
+        <PasswordInput
           value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
+          onChange={setCurrentPassword}
           placeholder="현재 비밀번호"
-          className="min-h-16 w-full rounded-2xl border-0 bg-gray-50 px-5 text-xl font-bold text-gray-900 ring-2 ring-gray-200 focus:ring-blue-500"
+          autoComplete="current-password"
         />
-        <input
-          type="password"
-          autoComplete="new-password"
+        <PasswordInput
           value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
+          onChange={setNewPassword}
           placeholder="새 비밀번호"
-          className="min-h-16 w-full rounded-2xl border-0 bg-gray-50 px-5 text-xl font-bold text-gray-900 ring-2 ring-gray-200 focus:ring-blue-500"
-        />
-        <input
-          type="password"
           autoComplete="new-password"
+        />
+        <PasswordInput
           value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
+          onChange={setConfirmPassword}
+          onEnter={handleSubmit}
           placeholder="새 비밀번호 확인"
-          className="min-h-16 w-full rounded-2xl border-0 bg-gray-50 px-5 text-xl font-bold text-gray-900 ring-2 ring-gray-200 focus:ring-blue-500"
+          autoComplete="new-password"
         />
       </div>
 
