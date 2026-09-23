@@ -50,7 +50,13 @@ export async function POST(request: NextRequest) {
 
   const valid = await verifyPassword(password, store.password_hash);
   if (!valid) {
-    await recordFailedAttempt(storeId, store.failed_login_attempts);
+    const { justLocked } = await recordFailedAttempt(
+      storeId,
+      store.failed_login_attempts
+    );
+    if (justLocked) {
+      return NextResponse.json({ error: LOCKOUT_ERROR }, { status: 429 });
+    }
     return NextResponse.json(
       { error: "매장 ID 또는 비밀번호가 올바르지 않습니다." },
       { status: 401 }

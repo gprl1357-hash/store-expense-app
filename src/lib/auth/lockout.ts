@@ -14,22 +14,24 @@ export function isLockedOut(store: { locked_until: string | null }): boolean {
   return new Date(store.locked_until).getTime() > Date.now();
 }
 
-/** 비밀번호 검증 실패 시 시도 횟수 증가, 임계치 도달 시 잠금 */
+/** 비밀번호 검증 실패 시 시도 횟수 증가, 임계치 도달 시 잠금. 이번 시도로 막 잠겼으면 true 반환 */
 export async function recordFailedAttempt(
   storeId: string,
   currentAttempts: number
-): Promise<void> {
+): Promise<{ justLocked: boolean }> {
   const admin = createSupabaseAdmin();
   const attempts = currentAttempts + 1;
-  const lockedUntil =
-    attempts >= MAX_ATTEMPTS
-      ? new Date(Date.now() + LOCK_DURATION_MS).toISOString()
-      : null;
+  const justLocked = attempts >= MAX_ATTEMPTS;
+  const lockedUntil = justLocked
+    ? new Date(Date.now() + LOCK_DURATION_MS).toISOString()
+    : null;
 
   await admin
     .from("stores")
     .update({ failed_login_attempts: attempts, locked_until: lockedUntil })
     .eq("id", storeId);
+
+  return { justLocked };
 }
 
 /** 로그인/비밀번호 변경 성공 시 시도 횟수 초기화 */
