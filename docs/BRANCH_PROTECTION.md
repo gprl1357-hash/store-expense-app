@@ -21,24 +21,26 @@
 | **Require a pull request before merging** | ✅ ON | Preview 확인 후 merge |
 | └ Require approvals | **0** (3명 소규모) 또는 **1** | 팀 정책에 맞게 |
 | **Require status checks to pass before merging** | ✅ ON | CI 빌드 통과 필수 |
-| └ Status checks | **`Build / build`** 선택 | `.github/workflows/build.yml` |
+| └ Status checks | **`build`** 선택 (workflow명 `Build`, job명 `build`) | `.github/workflows/build.yml` |
 | **Require branches to be up to date before merging** | ✅ ON (권장) | 최신 main 기준 |
 | **Do not allow bypassing the above settings** | ✅ ON (관리자만 예외 가능) | |
 | **Allow force pushes** | ❌ OFF | 운영 히스토리 보호 |
 | **Allow deletions** | ❌ OFF | `main` 삭제 방지 |
 
-> CI 워크플로를 push한 **첫 merge 이후**에야 `Build / build` 체크가 목록에 나타납니다.  
-> 한 번 `main`에 workflow가 merge된 뒤 이 설정을 완료하세요.
+> CI 워크플로가 **최근 7일 내 성공적으로 실행된 이후**에야 검색창에 `build` 체크가 나타납니다
+> (검색창은 입력해야 후보가 뜨며, 비어 있으면 빈 목록으로 보입니다).
 
 ---
 
-## 3. 설정 후 워크플로
+## 3. 설정 후 워크플로 (2026-09-22~ dev/main 분리)
 
 ```
-feature/* → PR → CI Build 통과 → Preview 확인 → Merge → Vercel Production
+feature/* → dev로 PR/머지 (Preview = dev Supabase)
+dev → main으로 PR (2차 검토 + 사용자 최종 승인 후에만) → CI Build 통과 → Merge → Vercel Production
 ```
 
-**직접 `main` push**는 보호 규칙 때문에 거부됩니다. (관리자 bypass 제외)
+**직접 `main` push**는 보호 규칙 때문에 거부됩니다. (관리자 bypass 제외)  
+상세: [`DEV_ENVIRONMENT.md`](DEV_ENVIRONMENT.md)
 
 ---
 
@@ -49,7 +51,7 @@ gh auth login
 
 gh api repos/gprl1357-hash/store-expense-app/branches/main/protection \
   --method PUT \
-  -f required_status_checks='{"strict":true,"contexts":["Build / build"]}' \
+  -f required_status_checks='{"strict":true,"contexts":["build"]}' \
   -f enforce_admins=false \
   -f required_pull_request_reviews='{"required_approving_review_count":0}' \
   -F restrictions=null \
@@ -57,7 +59,7 @@ gh api repos/gprl1357-hash/store-expense-app/branches/main/protection \
   -f allow_deletions=false
 ```
 
-> `Build / build` 이름은 Actions 탭에서 실제 job 이름과 일치해야 합니다.
+> `build`는 Actions 탭에서 실제 job 이름과 일치해야 합니다. (2026-09-22: `main` 브랜치에 적용 완료, `protected: true` 확인됨)
 
 ---
 

@@ -14,10 +14,11 @@ import { ExpenseCharts } from "@/components/ExpenseCharts";
 import { ExportButtons } from "@/components/ExportButtons";
 import { TrashModal } from "@/components/TrashModal";
 import { SettingsPanel } from "@/components/SettingsPanel";
-import { StoreSwitcher } from "@/components/StoreSwitcher";
+import { StoreDropdown } from "@/components/StoreDropdown";
 import { TabNav, type Tab } from "@/components/TabNav";
 import { UserFilterBar } from "@/components/UserFilterBar";
 import {
+  APP_TITLE,
   formatAmount,
   monthRange,
   todayString,
@@ -30,6 +31,11 @@ import {
 } from "@/lib/constants";
 import { filterByCategory, filterBySearch } from "@/lib/filterExpenses";
 import { useStore } from "@/lib/store-context";
+import { useAuth } from "@/lib/auth/auth-context";
+import { StoreLoginModal } from "@/components/StoreLoginModal";
+import { AnnouncementModal } from "@/components/AnnouncementModal";
+import { FeedbackButton } from "@/components/FeedbackButton";
+import { FeedbackModal } from "@/components/FeedbackModal";
 import {
   deleteExpense,
   fetchDeletedExpenses,
@@ -37,13 +43,14 @@ import {
   fetchMonthlyExpenses,
   insertExpense,
   restoreExpense,
-  subscribeExpenses,
   updateExpense,
 } from "@/lib/supabase/expenses";
 import { resizeImageFile, uploadExpensePhoto } from "@/lib/supabase/storage";
-import type { Expense } from "@/lib/supabase/types";
+import type { Expense, ExpenseUpdate } from "@/lib/supabase/types";
 import { sendSlackExpenseNotify } from "@/lib/slack/trigger-notify";
 import { Loader2, RotateCcw } from "lucide-react";
+
+const POLL_INTERVAL_MS = 20_000;
 
 function parseToday() {
   const [y, m, d] = todayString().split("-").map(Number);
@@ -69,6 +76,9 @@ export default function HomePage() {
     monthlyBudget,
     setStoreId,
   } = useStore();
+  const { authenticatedStoreIds, loadingStatus } = useAuth();
+  const isAuthed = authenticatedStoreIds.has(storeId);
+  const hasAnyAuth = authenticatedStoreIds.size > 0;
 
   const today = parseToday();
   const [tab, setTab] = useState<Tab>("input");
@@ -82,6 +92,8 @@ export default function HomePage() {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
   const [showTrash, setShowTrash] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [showAddStore, setShowAddStore] = useState(false);
   const [toast, setToast] = useState("");
 
   const [periodMode, setPeriodMode] = useState<PeriodMode>("month");
@@ -127,6 +139,7 @@ export default function HomePage() {
   }, [storeId]);
 
   useEffect(() => {
+    if (!isAuthed) return;
     let cancelled = false;
 
     (async () => {
@@ -140,20 +153,25 @@ export default function HomePage() {
       }
     })();
 
-    const unsubscribe = subscribeExpenses(storeId, () => {
-      if (cancelled) return;
-      loadBudgetExpenses();
-      if (tab === "browse") loadPeriodExpenses();
-    });
-
     return () => {
       cancelled = true;
-      unsubscribe();
     };
-  }, [loadBudgetExpenses, loadPeriodExpenses, tab, storeId]);
+  }, [storeId, isAuthed]);
+
+  // 실시간 대신 주기 폴링 — 서버(API Route)가 접근 통제를 하므로
+  // 브라우저가 Supabase에 직접 연결하지 않습니다 (OWASP A01 대응).
+  useEffect(() => {
+    if (!isAuthed) return;
+    const interval = setInterval(() => {
+      loadBudgetExpenses();
+      if (tab === "browse") loadPeriodExpenses();
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [loadBudgetExpenses, loadPeriodExpenses, tab, isAuthed]);
 
   useEffect(() => {
-    if (tab !== "browse") return;
+    if (!isAuthed || tab !== "browse") return;
     let cancelled = false;
 
     (async () => {
@@ -173,7 +191,7 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [tab, storeId, periodMode, year, month]);
+  }, [tab, storeId, periodMode, year, month, isAuthed]);
 
   useEffect(() => {
     if (userFilter !== "전체" && !users.includes(userFilter)) {
@@ -249,7 +267,10 @@ export default function HomePage() {
       try {
         const resized = await resizeImageFile(photo);
         const photoUrl = await uploadExpensePhoto(expense.id, resized);
-        finalExpense = await updateExpense(expense.id, { photo_url: photoUrl });
+        finalExpense = await updateExpense(expense.id, {
+          store_id: storeId,
+          photo_url: photoUrl,
+        });
       } catch (err) {
         console.error(err);
         await sendSlackExpenseNotify(finalExpense);
@@ -268,18 +289,15 @@ export default function HomePage() {
     loadPeriodExpenses();
   }
 
-  async function handleUpdate(
-    id: string,
-    input: Parameters<typeof updateExpense>[1]
-  ) {
-    await updateExpense(id, input);
+  async function handleUpdate(id: string, input: ExpenseUpdate) {
+    await updateExpense(id, { ...input, store_id: storeId });
     showToast("수정되었습니다 ✓");
     loadBudgetExpenses();
     loadPeriodExpenses();
   }
 
   async function handleDelete(id: string) {
-    await deleteExpense(id);
+    await deleteExpense(id, storeId);
     showToast("휴지통으로 이동했습니다 (복원 가능)");
     setSelectedDayDate(null);
     loadBudgetExpenses();
@@ -287,7 +305,7 @@ export default function HomePage() {
   }
 
   async function handleRestore(id: string) {
-    await restoreExpense(id);
+    await restoreExpense(id, storeId);
     showToast("복원되었습니다 ✓");
     loadBudgetExpenses();
     loadPeriodExpenses();
@@ -309,35 +327,8 @@ export default function HomePage() {
         ? periodLoading
         : false;
 
-  return (
-    <div className="mx-auto min-h-screen max-w-lg bg-gray-50 pb-28">
-      <header className="sticky top-0 z-30 bg-gray-50/95 px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold leading-snug text-gray-900 sm:text-2xl">
-              {store.title}
-            </h1>
-            <p className="mt-1 text-lg text-gray-600 sm:text-xl">
-              함께 기록하고 확인해요
-            </p>
-          </div>
-          {tab === "browse" && (
-            <button
-              type="button"
-              onClick={() => setShowTrash(true)}
-              className="flex min-h-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-white px-5 shadow-sm ring-2 ring-gray-200 active:bg-gray-50"
-              aria-label="삭제 복원"
-            >
-              <RotateCcw className="h-7 w-7 text-blue-600" />
-              <span className="text-base font-bold text-blue-600">복원</span>
-            </button>
-          )}
-        </div>
-        <div className="mt-4">
-          <StoreSwitcher selected={storeId} onChange={handleStoreChange} />
-        </div>
-      </header>
-
+  const authenticatedContent = (
+    <>
       <main className="space-y-5 px-5">
         {tab === "settings" ? (
           <SettingsPanel onSaved={showToast} />
@@ -452,6 +443,17 @@ export default function HomePage() {
 
       <TabNav active={tab} onChange={setTab} />
 
+      <FeedbackButton onClick={() => setShowFeedback(true)} />
+
+      {showFeedback && (
+        <FeedbackModal
+          storeId={storeId}
+          users={users}
+          onClose={() => setShowFeedback(false)}
+          onSubmitted={showToast}
+        />
+      )}
+
       {selectedExpense && (
         <ExpenseModal
           expense={selectedExpense}
@@ -480,6 +482,78 @@ export default function HomePage() {
           onRestore={handleRestore}
           fetchDeleted={loadDeleted}
         />
+      )}
+    </>
+  );
+
+  return (
+    <div className="mx-auto min-h-screen max-w-lg bg-gray-50 pb-28">
+      <AnnouncementModal />
+
+      {hasAnyAuth && (
+        <header className="sticky top-0 z-30 bg-gray-50/95 px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl font-bold leading-snug text-gray-900 sm:text-2xl">
+                {store.title}
+              </h1>
+              <p className="mt-1 text-lg text-gray-600 sm:text-xl">
+                함께 기록하고 확인해요
+              </p>
+            </div>
+            {tab === "browse" && (
+              <button
+                type="button"
+                onClick={() => setShowTrash(true)}
+                className="flex min-h-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-white px-5 shadow-sm ring-2 ring-gray-200 active:bg-gray-50"
+                aria-label="삭제 복원"
+              >
+                <RotateCcw className="h-7 w-7 text-blue-600" />
+                <span className="text-base font-bold text-blue-600">복원</span>
+              </button>
+            )}
+          </div>
+          <div className="mt-4">
+            <StoreDropdown
+              selected={storeId}
+              authenticatedStoreIds={authenticatedStoreIds}
+              onSelect={handleStoreChange}
+              onAddStore={() => setShowAddStore(true)}
+            />
+          </div>
+        </header>
+      )}
+
+      {loadingStatus ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+        </div>
+      ) : !hasAnyAuth ? (
+        <main className="flex min-h-screen flex-col items-center justify-center px-5 py-10">
+          <p className="mb-8 text-center text-2xl font-bold text-gray-900">
+            {APP_TITLE}
+          </p>
+          <StoreLoginModal store={null} onResolvedStore={setStoreId} />
+        </main>
+      ) : !isAuthed ? (
+        <main className="px-5 pt-10">
+          <StoreLoginModal store={store} />
+        </main>
+      ) : (
+        authenticatedContent
+      )}
+
+      {showAddStore && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+          <StoreLoginModal
+            store={null}
+            onResolvedStore={(id) => {
+              setStoreId(id);
+              setShowAddStore(false);
+            }}
+            onCancel={() => setShowAddStore(false)}
+          />
+        </div>
       )}
 
       {toast && (
