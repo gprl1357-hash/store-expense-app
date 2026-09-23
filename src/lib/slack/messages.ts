@@ -4,7 +4,7 @@ import {
   formatDateTime24KST,
   getStoreTitle,
 } from "../constants";
-import type { Expense } from "../supabase/types";
+import type { Expense, Feedback } from "../supabase/types";
 
 export function formatExpenseNotifyMessage(expense: Expense): string {
   const memo = expense.memo?.trim() ? expense.memo.trim() : "(없음)";
@@ -22,6 +22,20 @@ export function formatExpenseNotifyMessage(expense: Expense): string {
   ];
   if (photo) lines.push(photo);
   lines.push(`_${storeTitle}_`);
+  return lines.join("\n");
+}
+
+export function formatFeedbackNotifyMessage(feedback: Feedback): string {
+  const registeredAt = formatDateTime24KST(feedback.created_at);
+  const storeTitle = getStoreTitle(feedback.store_id);
+  const lines = [
+    `*[개선요청]* ${registeredAt}`,
+    `매장: ${storeTitle} | 작성자: ${feedback.created_by}`,
+    feedback.message,
+  ];
+  for (const url of feedback.media_urls) {
+    lines.push(url);
+  }
   return lines.join("\n");
 }
 

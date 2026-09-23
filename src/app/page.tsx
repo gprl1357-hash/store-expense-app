@@ -32,6 +32,8 @@ import { filterByCategory, filterBySearch } from "@/lib/filterExpenses";
 import { useStore } from "@/lib/store-context";
 import { useAuth } from "@/lib/auth/auth-context";
 import { StoreLoginModal } from "@/components/StoreLoginModal";
+import { FeedbackButton } from "@/components/FeedbackButton";
+import { FeedbackModal } from "@/components/FeedbackModal";
 import {
   deleteExpense,
   fetchDeletedExpenses,
@@ -87,6 +89,7 @@ export default function HomePage() {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
   const [showTrash, setShowTrash] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [toast, setToast] = useState("");
 
   const [periodMode, setPeriodMode] = useState<PeriodMode>("month");
@@ -472,6 +475,17 @@ export default function HomePage() {
       </main>
 
       <TabNav active={tab} onChange={setTab} />
+
+      <FeedbackButton onClick={() => setShowFeedback(true)} />
+
+      {showFeedback && (
+        <FeedbackModal
+          storeId={storeId}
+          users={users}
+          onClose={() => setShowFeedback(false)}
+          onSubmitted={showToast}
+        />
+      )}
 
       {selectedExpense && (
         <ExpenseModal

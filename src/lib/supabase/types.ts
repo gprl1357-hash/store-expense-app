@@ -30,6 +30,26 @@ export type ExpenseUpdate = Partial<
   >
 >;
 
+export type FeedbackStatus = "new" | "read" | "resolved";
+
+export type Feedback = {
+  id: string;
+  store_id: StoreId;
+  created_by: User;
+  message: string;
+  media_urls: string[];
+  status: FeedbackStatus;
+  created_at: string;
+  resolved_at: string | null;
+};
+
+export type FeedbackInsert = {
+  store_id: StoreId;
+  created_by: User;
+  message: string;
+  media_urls?: string[];
+};
+
 type ExpenseRow = {
   id: string;
   store_id?: string | null;
@@ -134,6 +154,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      feedback: {
+        Row: {
+          id: string;
+          store_id: string;
+          created_by: string;
+          message: string;
+          media_urls: string[];
+          status: "new" | "read" | "resolved";
+          created_at: string;
+          resolved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          store_id: string;
+          created_by: string;
+          message: string;
+          media_urls?: string[];
+          status?: "new" | "read" | "resolved";
+          created_at?: string;
+          resolved_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          store_id?: string;
+          created_by?: string;
+          message?: string;
+          media_urls?: string[];
+          status?: "new" | "read" | "resolved";
+          created_at?: string;
+          resolved_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -155,5 +208,20 @@ export function parseExpense(row: ExpenseRow): Expense {
     created_at: row.created_at,
     deleted_at: row.deleted_at ?? null,
     photo_url: row.photo_url ?? null,
+  };
+}
+
+type FeedbackRow = Database["public"]["Tables"]["feedback"]["Row"];
+
+export function parseFeedback(row: FeedbackRow): Feedback {
+  return {
+    id: row.id,
+    store_id: row.store_id as StoreId,
+    created_by: row.created_by as User,
+    message: row.message,
+    media_urls: row.media_urls ?? [],
+    status: row.status,
+    created_at: row.created_at,
+    resolved_at: row.resolved_at ?? null,
   };
 }
