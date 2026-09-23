@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   if (error || !store) {
+    console.error("[auth/login] store lookup failed", { storeId, error });
     return NextResponse.json(
       { error: "매장 ID 또는 비밀번호가 올바르지 않습니다." },
       { status: 401 }
@@ -38,6 +39,11 @@ export async function POST(request: NextRequest) {
 
   const valid = await verifyPassword(password, store.password_hash);
   if (!valid) {
+    console.error("[auth/login] password mismatch", {
+      storeId,
+      hashPrefix: store.password_hash?.slice(0, 7),
+      hashLength: store.password_hash?.length,
+    });
     return NextResponse.json(
       { error: "매장 ID 또는 비밀번호가 올바르지 않습니다." },
       { status: 401 }
