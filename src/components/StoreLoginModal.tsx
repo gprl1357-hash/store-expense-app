@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { KeyRound, Loader2, Lock } from "lucide-react";
+import { KeyRound, Loader2, Lock, X } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { validatePasswordRules } from "@/lib/auth/password-rules";
 import { STORES, type StoreConfig, type StoreId } from "@/lib/constants";
@@ -14,9 +14,11 @@ type StoreLoginModalProps = {
   store: StoreConfig | null;
   /** 로그인/비밀번호 변경 성공 시 어떤 매장인지 알려줌 (매장 ID 직접 입력 모드에서 필요) */
   onResolvedStore?: (id: StoreId) => void;
+  /** 있으면 닫기 버튼 표시 (이미 다른 매장에 로그인된 상태에서 "매장 추가" 시 취소 가능하게) */
+  onCancel?: () => void;
 };
 
-export function StoreLoginModal({ store, onResolvedStore }: StoreLoginModalProps) {
+export function StoreLoginModal({ store, onResolvedStore, onCancel }: StoreLoginModalProps) {
   const { login, changePassword } = useAuth();
   const [step, setStep] = useState<"identify" | "password" | "change">(
     store ? "password" : "identify"
@@ -88,7 +90,17 @@ export function StoreLoginModal({ store, onResolvedStore }: StoreLoginModalProps
   }
 
   return (
-    <div className="mx-auto max-w-md rounded-3xl bg-white p-7 shadow-lg ring-1 ring-gray-100">
+    <div className="relative mx-auto max-w-md rounded-3xl bg-white p-7 shadow-lg ring-1 ring-gray-100">
+      {onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500"
+          aria-label="닫기"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
       <div className="flex flex-col items-center gap-6">
         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-50">
           {step === "change" ? (

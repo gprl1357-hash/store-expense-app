@@ -14,7 +14,7 @@ import { ExpenseCharts } from "@/components/ExpenseCharts";
 import { ExportButtons } from "@/components/ExportButtons";
 import { TrashModal } from "@/components/TrashModal";
 import { SettingsPanel } from "@/components/SettingsPanel";
-import { StoreSwitcher } from "@/components/StoreSwitcher";
+import { StoreDropdown } from "@/components/StoreDropdown";
 import { TabNav, type Tab } from "@/components/TabNav";
 import { UserFilterBar } from "@/components/UserFilterBar";
 import {
@@ -92,6 +92,7 @@ export default function HomePage() {
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
   const [showTrash, setShowTrash] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showAddStore, setShowAddStore] = useState(false);
   const [toast, setToast] = useState("");
 
   const [periodMode, setPeriodMode] = useState<PeriodMode>("month");
@@ -510,7 +511,12 @@ export default function HomePage() {
             )}
           </div>
           <div className="mt-4">
-            <StoreSwitcher selected={storeId} onChange={handleStoreChange} />
+            <StoreDropdown
+              selected={storeId}
+              authenticatedStoreIds={authenticatedStoreIds}
+              onSelect={handleStoreChange}
+              onAddStore={() => setShowAddStore(true)}
+            />
           </div>
         </header>
       )}
@@ -532,6 +538,19 @@ export default function HomePage() {
         </main>
       ) : (
         authenticatedContent
+      )}
+
+      {showAddStore && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+          <StoreLoginModal
+            store={null}
+            onResolvedStore={(id) => {
+              setStoreId(id);
+              setShowAddStore(false);
+            }}
+            onCancel={() => setShowAddStore(false)}
+          />
+        </div>
       )}
 
       {toast && (
