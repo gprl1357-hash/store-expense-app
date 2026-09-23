@@ -73,12 +73,12 @@ export function FeedbackModal({
 
     setLoading(true);
     try {
-      const mediaUrls: string[] = [];
-      for (const photo of photos) {
-        const resized = await resizeImageFile(photo.file);
-        const url = await uploadFeedbackMedia(resized);
-        mediaUrls.push(url);
-      }
+      const mediaUrls = await Promise.all(
+        photos.map(async (photo) => {
+          const resized = await resizeImageFile(photo.file);
+          return uploadFeedbackMedia(resized);
+        })
+      );
 
       await submitFeedback({
         store_id: storeId,

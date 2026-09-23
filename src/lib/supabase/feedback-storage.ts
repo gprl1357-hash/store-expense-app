@@ -1,18 +1,8 @@
 import { getSupabase } from "./client";
+import { extensionFromFile } from "./storage";
 
 const BUCKET = "feedback-media";
 const MAX_SIZE = 5 * 1024 * 1024;
-
-function extensionFromFile(file: File): string {
-  const fromName = file.name.split(".").pop()?.toLowerCase();
-  if (fromName && ["jpg", "jpeg", "png", "webp", "heic", "heif"].includes(fromName)) {
-    return fromName === "jpeg" ? "jpg" : fromName;
-  }
-  if (file.type === "image/png") return "png";
-  if (file.type === "image/webp") return "webp";
-  if (file.type === "image/heic" || file.type === "image/heif") return "heic";
-  return "jpg";
-}
 
 /** 개선요청 첨부 사진 업로드 (동영상은 2단계에서 추가 예정) */
 export async function uploadFeedbackMedia(file: File): Promise<string> {

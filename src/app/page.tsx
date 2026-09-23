@@ -323,45 +323,8 @@ export default function HomePage() {
         ? periodLoading
         : false;
 
-  return (
-    <div className="mx-auto min-h-screen max-w-lg bg-gray-50 pb-28">
-      <header className="sticky top-0 z-30 bg-gray-50/95 px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold leading-snug text-gray-900 sm:text-2xl">
-              {store.title}
-            </h1>
-            <p className="mt-1 text-lg text-gray-600 sm:text-xl">
-              함께 기록하고 확인해요
-            </p>
-          </div>
-          {tab === "browse" && (
-            <button
-              type="button"
-              onClick={() => setShowTrash(true)}
-              className="flex min-h-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-white px-5 shadow-sm ring-2 ring-gray-200 active:bg-gray-50"
-              aria-label="삭제 복원"
-            >
-              <RotateCcw className="h-7 w-7 text-blue-600" />
-              <span className="text-base font-bold text-blue-600">복원</span>
-            </button>
-          )}
-        </div>
-        <div className="mt-4">
-          <StoreSwitcher selected={storeId} onChange={handleStoreChange} />
-        </div>
-      </header>
-
-      {loadingStatus ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-        </div>
-      ) : !isAuthed ? (
-        <main className="px-5 pt-10">
-          <StoreLoginModal store={store} />
-        </main>
-      ) : (
-        <>
+  const authenticatedContent = (
+    <>
       <main className="space-y-5 px-5">
         {tab === "settings" ? (
           <SettingsPanel onSaved={showToast} />
@@ -516,7 +479,48 @@ export default function HomePage() {
           fetchDeleted={loadDeleted}
         />
       )}
-        </>
+    </>
+  );
+
+  return (
+    <div className="mx-auto min-h-screen max-w-lg bg-gray-50 pb-28">
+      <header className="sticky top-0 z-30 bg-gray-50/95 px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-bold leading-snug text-gray-900 sm:text-2xl">
+              {store.title}
+            </h1>
+            <p className="mt-1 text-lg text-gray-600 sm:text-xl">
+              함께 기록하고 확인해요
+            </p>
+          </div>
+          {tab === "browse" && (
+            <button
+              type="button"
+              onClick={() => setShowTrash(true)}
+              className="flex min-h-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-white px-5 shadow-sm ring-2 ring-gray-200 active:bg-gray-50"
+              aria-label="삭제 복원"
+            >
+              <RotateCcw className="h-7 w-7 text-blue-600" />
+              <span className="text-base font-bold text-blue-600">복원</span>
+            </button>
+          )}
+        </div>
+        <div className="mt-4">
+          <StoreSwitcher selected={storeId} onChange={handleStoreChange} />
+        </div>
+      </header>
+
+      {loadingStatus ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+        </div>
+      ) : !isAuthed ? (
+        <main className="px-5 pt-10">
+          <StoreLoginModal store={store} />
+        </main>
+      ) : (
+        authenticatedContent
       )}
 
       {toast && (

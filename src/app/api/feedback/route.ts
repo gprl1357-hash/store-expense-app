@@ -15,11 +15,14 @@ export async function POST(request: NextRequest) {
     | null;
 
   const storeId = body?.store_id;
+  const createdBy = body?.created_by;
   const message = body?.message?.trim();
   const mediaUrls = Array.isArray(body?.media_urls) ? body!.media_urls : [];
 
   if (
     !storeId ||
+    typeof createdBy !== "string" ||
+    !createdBy ||
     !message ||
     message.length > MAX_MESSAGE_LENGTH ||
     mediaUrls.length > MAX_MEDIA_COUNT ||
@@ -34,7 +37,7 @@ export async function POST(request: NextRequest) {
   try {
     const feedback = await insertFeedbackAdmin({
       store_id: body!.store_id!,
-      created_by: body!.created_by,
+      created_by: createdBy,
       message,
       media_urls: mediaUrls,
     });

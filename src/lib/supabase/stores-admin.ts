@@ -1,12 +1,8 @@
 import { createSupabaseAdmin } from "./admin";
 import type { StoreId } from "../constants";
+import type { StoreRow } from "./stores";
 
-export type StoreRow = {
-  id: string;
-  name: string;
-  monthly_budget: number;
-  updated_at: string;
-};
+export type { StoreRow };
 
 function parseStore(row: {
   id: string;

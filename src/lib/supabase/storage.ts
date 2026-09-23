@@ -3,7 +3,7 @@ import { getSupabase } from "./client";
 const BUCKET = "expense-photos";
 const MAX_SIZE = 5 * 1024 * 1024;
 
-function extensionFromFile(file: File): string {
+export function extensionFromFile(file: File): string {
   const fromName = file.name.split(".").pop()?.toLowerCase();
   if (fromName && ["jpg", "jpeg", "png", "webp", "heic", "heif"].includes(fromName)) {
     return fromName === "jpeg" ? "jpg" : fromName;

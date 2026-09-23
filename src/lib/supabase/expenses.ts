@@ -1,13 +1,6 @@
 import type { Expense, ExpenseInsert, ExpenseUpdate } from "./types";
 import { currentMonthRange, type StoreId } from "../constants";
-
-async function handleJson<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body?.error ?? `요청에 실패했습니다. (${res.status})`);
-  }
-  return res.json();
-}
+import { handleJson } from "./http";
 
 /** 기간별 활성 지출 목록 조회 (매장 필터) */
 export async function fetchExpensesInRange(

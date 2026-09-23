@@ -52,28 +52,30 @@ export async function verifyStoreSession(
   if (!token) return false;
 
   const admin = createSupabaseAdmin();
-  const { data: store, error: storeError } = await admin
-    .from("stores")
-    .select("password_version")
-    .eq("id", storeId)
-    .maybeSingle();
+  // 서로 독립적인 조회라 병렬로 실행 (직렬 2회 대신 1왕복)
+  const [{ data: store, error: storeError }, { data: session, error }] =
+    await Promise.all([
+      admin.from("stores").select("password_version").eq("id", storeId).maybeSingle(),
+      admin
+        .from("store_sessions")
+        .select("id, password_version")
+        .eq("store_id", storeId)
+        .eq("token_hash", hashToken(token))
+        .maybeSingle(),
+    ]);
 
-  if (storeError || !store) return false;
-
-  const { data: session, error } = await admin
-    .from("store_sessions")
-    .select("id, password_version")
-    .eq("store_id", storeId)
-    .eq("token_hash", hashToken(token))
-    .maybeSingle();
-
-  if (error || !session) return false;
+  if (storeError || !store || error || !session) return false;
   if (session.password_version !== store.password_version) return false;
 
-  await admin
+  // 마지막 사용 시각 갱신은 접근 통제에 영향 없는 부가 기록이므로
+  // 응답을 지연시키지 않도록 완료를 기다리지 않는다 (best-effort).
+  admin
     .from("store_sessions")
     .update({ last_used_at: new Date().toISOString() })
-    .eq("id", session.id);
+    .eq("id", session.id)
+    .then(({ error: touchError }) => {
+      if (touchError) console.error("[auth] last_used_at 갱신 실패:", touchError);
+    });
 
   return true;
 }
