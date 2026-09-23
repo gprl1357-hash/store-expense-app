@@ -33,6 +33,7 @@ import { filterByCategory, filterBySearch } from "@/lib/filterExpenses";
 import { useStore } from "@/lib/store-context";
 import { useAuth } from "@/lib/auth/auth-context";
 import { StoreLoginModal } from "@/components/StoreLoginModal";
+import { AnnouncementModal } from "@/components/AnnouncementModal";
 import { FeedbackButton } from "@/components/FeedbackButton";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import {
@@ -487,6 +488,8 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto min-h-screen max-w-lg bg-gray-50 pb-28">
+      <AnnouncementModal />
+
       {hasAnyAuth && (
         <header className="sticky top-0 z-30 bg-gray-50/95 px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur">
           <div className="flex items-start justify-between gap-3">
