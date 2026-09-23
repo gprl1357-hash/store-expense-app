@@ -3,30 +3,41 @@
 import { useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
 
-/** 새 공지가 생기면 이 값을 바꾸면 모든 사용자에게 다시 한 번 표시됨 */
+/** 새 공지가 생기면 이 값을 바꾸면 모든 사용자에게 다시 표시됨 (72시간 유예도 초기화됨) */
 const ANNOUNCEMENT_ID = "2026-09-24-login-change";
-const STORAGE_KEY = "store-expense-announcement-seen";
+const STORAGE_KEY = "store-expense-announcement-suppress";
+const SUPPRESS_MS = 72 * 60 * 60 * 1000; // 72시간
+
+type Suppression = { id: string; until: number };
+
+function isSuppressed(): boolean {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw) as Suppression;
+    return data.id === ANNOUNCEMENT_ID && data.until > Date.now();
+  } catch {
+    return false;
+  }
+}
 
 export function AnnouncementModal() {
   const [visible, setVisible] = useState(false);
+  const [dontShow72h, setDontShow72h] = useState(false);
 
   useEffect(() => {
-    try {
-      const seen = localStorage.getItem(STORAGE_KEY);
-      if (seen !== ANNOUNCEMENT_ID) {
-        setVisible(true);
-      }
-    } catch {
-      setVisible(true);
-    }
+    setVisible(!isSuppressed());
   }, []);
 
   function handleClose() {
     setVisible(false);
-    try {
-      localStorage.setItem(STORAGE_KEY, ANNOUNCEMENT_ID);
-    } catch {
-      /* ignore */
+    if (dontShow72h) {
+      try {
+        const data: Suppression = { id: ANNOUNCEMENT_ID, until: Date.now() + SUPPRESS_MS };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -52,10 +63,20 @@ export function AnnouncementModal() {
           비밀번호를 설정할 수 있습니다.
         </p>
 
+        <label className="mt-4 flex items-center gap-3 text-lg text-gray-600">
+          <input
+            type="checkbox"
+            checked={dontShow72h}
+            onChange={(e) => setDontShow72h(e.target.checked)}
+            className="h-6 w-6 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          72시간 동안 열지 않음
+        </label>
+
         <button
           type="button"
           onClick={handleClose}
-          className="mt-6 flex min-h-16 w-full items-center justify-center rounded-2xl bg-blue-600 text-xl font-bold text-white active:bg-blue-700"
+          className="mt-4 flex min-h-16 w-full items-center justify-center rounded-2xl bg-blue-600 text-xl font-bold text-white active:bg-blue-700"
         >
           확인했습니다
         </button>
