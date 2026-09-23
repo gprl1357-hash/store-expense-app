@@ -104,6 +104,8 @@ export type Database = {
           password_hash: string;
           must_change_password: boolean;
           password_version: number;
+          failed_login_attempts: number;
+          locked_until: string | null;
         };
         Insert: {
           id: string;
@@ -114,6 +116,8 @@ export type Database = {
           password_hash: string;
           must_change_password?: boolean;
           password_version?: number;
+          failed_login_attempts?: number;
+          locked_until?: string | null;
         };
         Update: {
           id?: string;
@@ -124,6 +128,8 @@ export type Database = {
           password_hash?: string;
           must_change_password?: boolean;
           password_version?: number;
+          failed_login_attempts?: number;
+          locked_until?: string | null;
         };
         Relationships: [];
       };

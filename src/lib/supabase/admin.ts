@@ -1,13 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { isVercelNonProduction } from "../env";
 
 // Vercel 대시보드 이름 중복 제한으로 SUPABASE_SERVICE_ROLE_KEY 대신
 // Production=SUPABASE_PUBLIC_SERVICE_ROLE_KEY, Preview=SUPABASE_PREVIEW_SERVICE_ROLE_KEY 로 등록됨.
 // Preview/Development(로컬 제외)는 SUPABASE_PREVIEW_SERVICE_ROLE_KEY가 없으면
 // 절대 운영 키로 폴백하지 않는다 — 실수로 운영 DB에 쓰기 요청을 보내는 사고 방지.
 function resolveServiceKey(): string | undefined {
-  const vercelEnv = process.env.VERCEL_ENV;
-  if (vercelEnv === "preview" || vercelEnv === "development") {
+  if (isVercelNonProduction(process.env.VERCEL_ENV)) {
     return process.env.SUPABASE_PREVIEW_SERVICE_ROLE_KEY;
   }
   return (

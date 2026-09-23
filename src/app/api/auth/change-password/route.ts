@@ -11,6 +11,12 @@ import {
   sessionCookieName,
   sessionCookieOptions,
 } from "@/lib/auth/session";
+import {
+  LOCKOUT_ERROR,
+  isLockedOut,
+  recordFailedAttempt,
+  resetLockout,
+} from "@/lib/auth/lockout";
 import { STORE_IDS, type StoreId } from "@/lib/constants";
 
 export async function POST(request: NextRequest) {
@@ -36,7 +42,9 @@ export async function POST(request: NextRequest) {
   const admin = createSupabaseAdmin();
   const { data: store, error } = await admin
     .from("stores")
-    .select("id, password_hash, password_version")
+    .select(
+      "id, password_hash, password_version, failed_login_attempts, locked_until"
+    )
     .eq("id", storeId)
     .maybeSingle();
 
@@ -44,13 +52,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "매장을 찾을 수 없습니다." }, { status: 404 });
   }
 
+  if (isLockedOut(store)) {
+    return NextResponse.json({ error: LOCKOUT_ERROR }, { status: 429 });
+  }
+
   const valid = await verifyPassword(currentPassword, store.password_hash);
   if (!valid) {
+    await recordFailedAttempt(storeId, store.failed_login_attempts);
     return NextResponse.json(
       { error: "현재 비밀번호가 올바르지 않습니다." },
       { status: 401 }
     );
   }
+
+  await resetLockout(storeId);
 
   const newHash = await hashPassword(newPassword);
   const nextVersion = store.password_version + 1;

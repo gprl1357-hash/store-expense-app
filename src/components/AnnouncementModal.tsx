@@ -58,9 +58,9 @@ export function AnnouncementModal() {
 
         <p className="rounded-2xl bg-gray-50 p-4 text-lg leading-relaxed text-gray-800">
           매장에 로그인하려면 휴대폰 번호 뒷자리를 입력해주세요. 각 매장
-          대표의 휴대폰 번호 뒷자리 4자리를 입력하고 최초 비밀번호{" "}
-          <span className="font-bold">&ldquo;0000&rdquo;</span>을 입력하면
-          비밀번호를 설정할 수 있습니다.
+          대표의 휴대폰 번호 뒷자리 4자리와 안내받은 초기 비밀번호를
+          입력하면 새 비밀번호를 설정할 수 있습니다. 초기 비밀번호를
+          모르신다면 관리자에게 문의해 주세요.
         </p>
 
         <label className="mt-4 flex items-center gap-3 text-lg text-gray-600">

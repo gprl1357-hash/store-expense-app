@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import path from "path";
 import { loadEnvConfig } from "@next/env";
+import { isVercelNonProduction } from "./src/lib/env";
 
 // .env.local 은 next.config 평가 시점에 자동 로드되지 않으므로 명시적으로 로드
 loadEnvConfig(path.join(__dirname));
@@ -53,15 +54,14 @@ const allowedDevOrigins = [
 // admin.ts/client.ts의 "비어있으면 에러" 체크로 드러나게 한다.
 // TODO: Vercel 대시보드에서 NEXT_PUBLIC_SUPABASE_URL/ANON_KEY를 "Add Different
 // Value for Production"으로 한 번 더 정리하면 이 분기 자체를 제거할 수 있다.
-const vercelEnv = process.env.VERCEL_ENV;
-const isVercelNonProduction = vercelEnv === "preview" || vercelEnv === "development";
+const nonProduction = isVercelNonProduction(process.env.VERCEL_ENV);
 
 const nextConfig: NextConfig = {
   env: {
-    NEXT_PUBLIC_SUPABASE_URL: isVercelNonProduction
+    NEXT_PUBLIC_SUPABASE_URL: nonProduction
       ? process.env.NEXT_PREVIEW_SUPABASE_URL ?? ""
       : process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: isVercelNonProduction
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: nonProduction
       ? process.env.NEXT_PREVIEW_SUPABASE_ANON_KEY ?? ""
       : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
